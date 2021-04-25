@@ -36,3 +36,8 @@ H
 src/models/User/index.ts,b\8\b807319693591b4ae4d5ddbffb50c36f001b7187
 K
 src/models/User/validate.ts,0\4\0409be276346f2a1f12585298bb6d67f6423f561
+M
+src/utils/auth/verifyToken.ts,1\1\11c82254682053d00418c11b3be8223b79f4caee
+:
+
+.gitignore,a\5\a5cc2925ca8258af241be7e5b0381edf30266302

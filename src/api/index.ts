@@ -1,17 +1,18 @@
 import { Application, Router } from "express";
-import { test, test2 } from "./test";
+import { test } from "./test";
 import { HttpError, verifyToken } from "../utils";
+import { login, signup } from "./auth";
 
 export const routes = (app: Application) => {
     const publicRouter = Router();
     const privateRouter = Router();
 
     //public routes
-    publicRouter.get("/test", test);
-    publicRouter.get("/test2", test2);
+    publicRouter.post("/auth/login", login);
+    publicRouter.post("/auth/signup", signup);
 
     //private routes
-    privateRouter.get("/user", test);
+    privateRouter.use("/test", test);
 
     app.use("/api/v1", publicRouter);
     app.use("/api/v1/private/auth", verifyToken, privateRouter);
