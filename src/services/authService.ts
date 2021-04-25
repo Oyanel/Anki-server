@@ -2,9 +2,9 @@ import Token from "../models/authentication/Token";
 import User from "../models/authentication/User";
 import { IToken } from "../models/authentication/Token/IToken";
 import { IUser } from "../models/authentication/User/IUser";
-import { sign } from "jsonwebtoken";
+import { sign, verify } from "jsonwebtoken";
 import "dotenv";
-import { HttpError } from "../utils";
+import { EHttpStatus, HttpError } from "../utils";
 import { logError } from "../utils/error/error";
 import { compare, hashSync } from "bcrypt";
 import { SALT_ROUND } from "../constant";
@@ -23,7 +23,7 @@ const saveToken = async (accessToken: String, refreshToken: String, user: IUser)
         .then((token) => token)
         .catch((error: Error) => {
             logError(error);
-            throw new HttpError(500);
+            throw new HttpError();
         });
 
     return tokenModel;
@@ -44,18 +44,18 @@ export const loginService = async (user: IUser) =>
         .exec()
         .then(async (userResponse) => {
             if (!userResponse) {
-                throw new HttpError(401, "Username or password incorrect.");
+                throw new HttpError(EHttpStatus.UNAUTHORIZED, "Username or password incorrect.");
             }
             const isEqual = await compare(user.password, userResponse.password);
             if (!isEqual) {
-                throw new HttpError(401, "Password incorrect.");
+                throw new HttpError(EHttpStatus.UNAUTHORIZED, "Password incorrect.");
             }
 
             return await generateToken(user);
         })
         .catch((error: Error) => {
             logError(error);
-            throw new HttpError(401, "Username or password incorrect.");
+            throw new HttpError(EHttpStatus.UNAUTHORIZED, "Username or password incorrect.");
         });
 
 const isUserExisting = (username: String) =>
@@ -66,15 +66,21 @@ const isUserExisting = (username: String) =>
             throw error;
         });
 
-export const signupService = async (user: IUser) => {
+export const registerService = async (user: IUser) => {
     if (await isUserExisting(user.username)) {
-        throw new HttpError(500, "Username already exists");
+        throw new HttpError(EHttpStatus.INTERNAL_ERROR, "Username already exists");
     }
 
     user.password = hashSync(user.password, SALT_ROUND);
 
     User.create<IUser>(user).catch((error: Error) => {
         logError(error);
-        throw new HttpError(500);
+        throw new HttpError();
     });
+};
+
+export const refreshTokenService = async (refreshToken: String) => {
+    const user = verify(refreshToken, process.env.APP_PUBLIC_TOKEN);
+
+    return await generateToken(user);
 };

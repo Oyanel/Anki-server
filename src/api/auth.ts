@@ -1,16 +1,16 @@
 import { Request, Response } from "express";
 import { IUser } from "../models/authentication/User/IUser";
-import { loginService, signupService } from "../services/authService";
-import { isEmail, isStrongPassword } from "validator";
+import { loginService, refreshTokenService, registerService } from "../services/authService";
+import { isEmail, isStrongPassword, isJWT } from "validator";
 import { sendError } from "../utils/error/error";
-import { HttpError } from "../utils";
+import { HttpError, EHttpStatus } from "../utils";
 
 export const login = async (req: Request, res: Response) => {
     const username = req.body.username;
     const password = req.body.password;
 
     if (!isEmail(username) || !password) {
-        return sendError(res, new HttpError(401, "Username or Password invalid"));
+        return sendError(res, new HttpError(EHttpStatus.UNAUTHORIZED, "Username or Password invalid"));
     }
 
     const user: IUser = {
@@ -27,16 +27,16 @@ export const login = async (req: Request, res: Response) => {
     }
 };
 
-export const signup = async (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response) => {
     const username = req.body.username;
     const password = req.body.password;
 
     if (!isEmail(username)) {
-        return sendError(res, new HttpError(400, "Username invalid"));
+        return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Username invalid"));
     }
 
     if (!isStrongPassword(password)) {
-        return sendError(res, new HttpError(400, "Password invalid"));
+        return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Password invalid"));
     }
 
     const user: IUser = {
@@ -45,9 +45,25 @@ export const signup = async (req: Request, res: Response) => {
     };
 
     try {
-        await signupService(user);
+        await registerService(user);
 
-        return res.sendStatus(201);
+        return res.sendStatus(EHttpStatus.CREATED);
+    } catch (error) {
+        return sendError(res, error);
+    }
+};
+
+export const refreshToken = async (req: Request, res: Response) => {
+    const token = req.body.token;
+
+    if (!isJWT(token)) {
+        return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request"));
+    }
+
+    try {
+        const newToken = await refreshTokenService(token);
+
+        return res.json({ token: newToken });
     } catch (error) {
         return sendError(res, error);
     }

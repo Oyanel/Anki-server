@@ -1,9 +1,11 @@
+import { EHttpStatus } from "../IHttp";
+
 export class HttpError {
     status?: number;
     message?: string;
 
     constructor(status?: number, message?: string) {
         this.message = message || "Internal error";
-        this.status = status || 500;
+        this.status = status || EHttpStatus.INTERNAL_ERROR;
     }
 }

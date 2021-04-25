@@ -1,7 +1,8 @@
 import { Application, Router } from "express";
-import { test } from "./test";
-import { HttpError, verifyToken } from "../utils";
-import { login, signup } from "./auth";
+import { test1 } from "./test";
+import { EHttpStatus, HttpError, verifyToken } from "../utils";
+import { login, refreshToken, register } from "./auth";
+import { sendError } from "../utils/error/error";
 
 export const routes = (app: Application) => {
     const publicRouter = Router();
@@ -9,17 +10,18 @@ export const routes = (app: Application) => {
 
     //public routes
     publicRouter.post("/auth/login", login);
-    publicRouter.post("/auth/signup", signup);
+    publicRouter.post("/auth/register", register);
+    publicRouter.post("/auth/token/refresh", refreshToken);
 
     //private routes
-    privateRouter.use("/test", test);
+    privateRouter.get("/test1", test1);
 
     app.use("/api/v1", publicRouter);
     app.use("/api/v1/private/auth", verifyToken, privateRouter);
 
     // Send Not Found error if no route is found.
     app.use((req, res) => {
-        const error = new HttpError(404, "Not Found");
-        res.status(404).json({ error });
+        const error = new HttpError(EHttpStatus.NOT_FOUND, "Not Found");
+        sendError(res, error);
     });
 };
