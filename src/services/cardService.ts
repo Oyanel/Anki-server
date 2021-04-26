@@ -3,6 +3,7 @@ import { addMinutes } from "date-fns";
 import Card from "../models/Card";
 import { EHttpStatus, HttpError } from "../utils";
 import { logError } from "../utils/error/error";
+import { Types } from "mongoose";
 
 // export const isCardExisting = async (front: String, back: String) => {
 //     return Card.countDocuments({
@@ -11,7 +12,7 @@ import { logError } from "../utils/error/error";
 //     }).then((count) => count > 0);
 // };
 
-export const addCardService = async (front: String, back: String) => {
+export const createCardService = async (front: String, back: String) => {
     const newCard: ICard = {
         back,
         front,
@@ -39,8 +40,8 @@ export const addCardService = async (front: String, back: String) => {
         });
 };
 
-export const getCardService = async (id: String) =>
-    Card.findOne({ _id: id })
+export const getCardService = async (id: string) =>
+    Card.findById(Types.ObjectId(id))
         .then((cardDocument) => {
             if (!cardDocument) {
                 throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
@@ -59,11 +60,11 @@ export const getCardService = async (id: String) =>
         })
         .catch((error) => {
             logError(error);
-            throw new HttpError();
+            throw error instanceof HttpError ? error : new HttpError();
         });
 
-export const updateCardService = async (id: String, front: String, back: String) =>
-    Card.updateOne({ _id: id }, { front, back })
+export const updateCardService = async (id: string, front: String, back: String) =>
+    Card.updateOne({ _id: Types.ObjectId(id) }, { front, back })
         .then((response) => {
             if (response.nModified === 0) {
                 throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
@@ -74,10 +75,10 @@ export const updateCardService = async (id: String, front: String, back: String)
             throw new HttpError();
         });
 
-export const deleteCardService = async (id: String) =>
-    Card.deleteOne({ _id: id })
+export const deleteCardService = async (id: string) =>
+    Card.findByIdAndRemove(Types.ObjectId(id))
         .then((response) => {
-            if (response.deletedCount === 0) {
+            if (!response) {
                 throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
             }
         })

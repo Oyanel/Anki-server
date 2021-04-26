@@ -2,22 +2,31 @@ import { Application, Router } from "express";
 import { EHttpStatus, HttpError, verifyToken } from "../utils";
 import { login, refreshToken, register } from "./auth";
 import { sendError } from "../utils/error/error";
-import { addCard, deleteCard, getCard, updateCard } from "./card";
+import { deleteCard, getCard, updateCard } from "./card";
+import { addCard, createDeck, deleteDeck, getDeck, updateDeck } from "./deck";
 
 export const routes = (app: Application) => {
     const publicRouter = Router();
     const privateRouter = Router();
 
-    //public routes
+    // Public routes
     publicRouter.post("/auth/login", login);
     publicRouter.post("/auth/register", register);
     publicRouter.post("/auth/token/refresh", refreshToken);
 
-    //private routes
-    privateRouter.post("/card", addCard);
-    privateRouter.get("/card/:cardId", getCard);
-    privateRouter.put("/card/:cardId", updateCard);
-    privateRouter.delete("/card/:cardId", deleteCard);
+    // Private routes
+
+    // Cards
+    privateRouter.get("/cards/:cardId", getCard);
+    privateRouter.put("/cards/:cardId", updateCard);
+    privateRouter.delete("/cards/:cardId", deleteCard);
+
+    // Deck
+    privateRouter.post("/decks", createDeck);
+    privateRouter.put("/decks/:deckId", updateDeck);
+    privateRouter.delete("/decks/:deckId", deleteDeck);
+    privateRouter.get("/decks/:deckId", getDeck);
+    privateRouter.post("/decks/:deckId/cards", addCard);
 
     app.use("/api/v1", publicRouter);
     app.use("/api/v1/private/auth", verifyToken, privateRouter);

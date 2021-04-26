@@ -1,31 +1,14 @@
 import { Request, Response } from "express";
-import { addCardService, deleteCardService, getCardService, updateCardService } from "../services/cardService";
+import { deleteCardService, getCardService, updateCardService } from "../services/cardService";
 import { sendError } from "../utils/error/error";
 import { EHttpStatus, HttpError } from "../utils";
-import { isAlphanumeric } from "validator";
 import { japaneseRegex, textRegex } from "../utils/validation/regex";
-
-export const addCard = async (req: Request, res: Response) => {
-    const front = req.body.front;
-    const back = req.body.back;
-
-    if (!japaneseRegex.test(front) || !textRegex.test(back)) {
-        return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Card invalid"));
-    }
-
-    try {
-        const newCard = await addCardService(front, back);
-
-        return res.status(EHttpStatus.CREATED).json(newCard);
-    } catch (error) {
-        return sendError(res, error);
-    }
-};
+import { isValidObjectId } from "mongoose";
 
 export const getCard = async (req: Request, res: Response) => {
     const id = req.params.cardId;
 
-    if (!isAlphanumeric(id)) {
+    if (!isValidObjectId(id)) {
         return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request"));
     }
 
@@ -43,7 +26,7 @@ export const updateCard = async (req: Request, res: Response) => {
     const front = req.body.front;
     const back = req.body.back;
 
-    if (!isAlphanumeric(id) || !japaneseRegex.test(front) || !textRegex.test(back)) {
+    if (!isValidObjectId(id) || !japaneseRegex.test(front) || !textRegex.test(back)) {
         return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request"));
     }
 
@@ -59,7 +42,7 @@ export const updateCard = async (req: Request, res: Response) => {
 export const deleteCard = async (req: Request, res: Response) => {
     const id = req.params.cardId;
 
-    if (!isAlphanumeric(id)) {
+    if (!isValidObjectId(id)) {
         return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request"));
     }
 
