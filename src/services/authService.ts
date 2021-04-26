@@ -19,7 +19,7 @@ const saveToken = async (accessToken: String, refreshToken: String, user: IUser)
         refreshTokenExpiresAt: addHours(new Date(), 4),
     };
 
-    await Token.create<IToken>(tokenModel)
+    await Token.findOneAndReplace({ user: user.username }, tokenModel, { upsert: true })
         .then((token) => token)
         .catch((error: Error) => {
             logError(error);
@@ -30,6 +30,7 @@ const saveToken = async (accessToken: String, refreshToken: String, user: IUser)
 };
 
 const generateToken = async (user: IUser) => {
+    delete user.password;
     const accessToken = sign({ user }, process.env.APP_PRIVATE_TOKEN, { expiresIn: "1h" });
     const refreshToken = sign({ user }, process.env.APP_PUBLIC_TOKEN, { expiresIn: "4h" });
 
@@ -80,7 +81,7 @@ export const registerService = async (user: IUser) => {
 };
 
 export const refreshTokenService = async (refreshToken: String) => {
-    const user = verify(refreshToken, process.env.APP_PUBLIC_TOKEN);
+    const tokenContent = verify(refreshToken, process.env.APP_PUBLIC_TOKEN);
 
-    return await generateToken(user);
+    return await generateToken(tokenContent.user);
 };

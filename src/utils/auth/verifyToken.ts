@@ -7,7 +7,6 @@ import { sendError } from "../error/error";
 export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
     const authorization = req.headers.authorization;
     const error = new HttpError(EHttpStatus.UNAUTHORIZED, "Unauthorized");
-    console.log(authorization.split(" ")[1]);
 
     try {
         verify(authorization.split(" ")[1], process.env.APP_PRIVATE_TOKEN);
