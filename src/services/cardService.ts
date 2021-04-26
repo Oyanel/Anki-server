@@ -64,8 +64,20 @@ export const getCardService = async (id: String) =>
 
 export const updateCardService = async (id: String, front: String, back: String) =>
     Card.updateOne({ _id: id }, { front, back })
-        .then((cardDocument) => {
-            if (!cardDocument) {
+        .then((response) => {
+            if (response.nModified === 0) {
+                throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
+            }
+        })
+        .catch((error) => {
+            logError(error);
+            throw new HttpError();
+        });
+
+export const deleteCardService = async (id: String) =>
+    Card.deleteOne({ _id: id })
+        .then((response) => {
+            if (response.deletedCount === 0) {
                 throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
             }
         })

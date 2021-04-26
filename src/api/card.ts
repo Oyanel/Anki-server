@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { addCardService, getCardService, updateCardService } from "../services/cardService";
+import { addCardService, deleteCardService, getCardService, updateCardService } from "../services/cardService";
 import { sendError } from "../utils/error/error";
 import { EHttpStatus, HttpError } from "../utils";
 import { isAlphanumeric } from "validator";
@@ -49,6 +49,22 @@ export const updateCard = async (req: Request, res: Response) => {
 
     try {
         await updateCardService(id, front, back);
+
+        return res.sendStatus(EHttpStatus.NO_CONTENT);
+    } catch (error) {
+        return sendError(res, error);
+    }
+};
+
+export const deleteCard = async (req: Request, res: Response) => {
+    const id = req.params.cardId;
+
+    if (!isAlphanumeric(id)) {
+        return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request"));
+    }
+
+    try {
+        await deleteCardService(id);
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {
