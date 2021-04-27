@@ -3,13 +3,10 @@ import Deck from "../models/Deck";
 import { EHttpStatus, HttpError } from "../utils";
 import { logError } from "../utils/error/error";
 import { createCardService } from "./cardService";
-import Card from "../models/Card";
-import { Types } from "mongoose";
+import { FilterQuery, Types } from "mongoose";
 
-export const isDeckExisting = async (name: string) =>
-    Deck.countDocuments({
-        name,
-    })
+export const isDeckExisting = async (condition: FilterQuery<IDeck>) =>
+    Deck.countDocuments(condition)
         .then((count) => count > 0)
         .catch((error: Error) => {
             logError(error);
@@ -17,29 +14,25 @@ export const isDeckExisting = async (name: string) =>
         });
 
 export const addCardService = async (deckId: string, front: string, back: string) => {
+    if (!(await isDeckExisting({ _id: Types.ObjectId(deckId) }))) {
+        throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
+    }
+
     const card = await createCardService(front, back);
     const cardId = Types.ObjectId(card.id.toString());
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    Deck.updateOne({ _id: Types.ObjectId(deckId) }, { $push: { cards: cardId } })
-        .then((response) => {
-            if (response.nModified === 0) {
-                Card.remove({ _id: cardId });
-                throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
-            }
-        })
-        .catch((error) => {
-            Card.remove({ _id: cardId });
-            logError(error);
-            throw error instanceof HttpError ? error : new HttpError();
-        });
+    Deck.updateOne({ _id: Types.ObjectId(deckId) }, { $push: { cards: cardId } }).catch((error) => {
+        logError(error);
+        throw error instanceof HttpError ? error : new HttpError();
+    });
 
     return card;
 };
 
 export const createDeckService = async (name: string, description: string) => {
-    if (await isDeckExisting(name)) {
+    if (await isDeckExisting({ name })) {
         throw new HttpError(EHttpStatus.BAD_REQUEST, "The deck name already exists");
     }
 
@@ -88,7 +81,7 @@ export const getDeckService = async (id: string) =>
         });
 
 export const updateDeckService = async (id: string, name: string, description: string) => {
-    if (await isDeckExisting(name)) {
+    if (await isDeckExisting({ name })) {
         throw new HttpError(EHttpStatus.BAD_REQUEST, "The deck name already exists");
     }
 
