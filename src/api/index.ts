@@ -4,6 +4,7 @@ import { login, refreshToken, register } from "./auth";
 import { sendError } from "../utils/error/error";
 import { deleteCard, getCard, updateCard } from "./card";
 import { addCard, createDeck, deleteDeck, getDeck, updateDeck } from "./deck";
+import { test } from "./test";
 
 export const routes = (app: Application) => {
     const publicRouter = Router();
@@ -13,6 +14,7 @@ export const routes = (app: Application) => {
     publicRouter.post("/auth/login", login);
     publicRouter.post("/auth/register", register);
     publicRouter.post("/auth/token/refresh", refreshToken);
+    publicRouter.get("/test", test);
 
     // Private routes
 

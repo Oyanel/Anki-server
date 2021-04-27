@@ -5,13 +5,6 @@ import { EHttpStatus, HttpError } from "../utils";
 import { logError } from "../utils/error/error";
 import { Types } from "mongoose";
 
-// export const isCardExisting = async (front: String, back: String) => {
-//     return Card.countDocuments({
-//         front,
-//         back,
-//     }).then((count) => count > 0);
-// };
-
 export const createCardService = async (front: String, back: String) => {
     const newCard: ICard = {
         back,
@@ -72,17 +65,18 @@ export const updateCardService = async (id: string, front: String, back: String)
         })
         .catch((error) => {
             logError(error);
-            throw new HttpError();
+            throw error instanceof HttpError ? error : new HttpError();
         });
 
 export const deleteCardService = async (id: string) =>
-    Card.findByIdAndRemove(Types.ObjectId(id))
-        .then((response) => {
-            if (!response) {
+    Card.findById(Types.ObjectId(id))
+        .then((card) => {
+            if (!card) {
                 throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
             }
+            card.remove();
         })
         .catch((error) => {
             logError(error);
-            throw new HttpError();
+            throw error instanceof HttpError ? error : new HttpError();
         });

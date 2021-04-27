@@ -29,14 +29,9 @@ const CardSchema = new Schema<TCardDocument>({
 });
 
 CardSchema.pre("remove", async function (next) {
-    const test = await Deck.findOne({ cards: { $in: [this._id] } })
+    await Deck.updateOne({ cards: { $in: [this._id] } }, { $pull: { cards: this._id } })
         .lean()
         .exec();
-
-    console.log(test);
-    // await Deck.updateOne({ cards: { $in: [this._id] } }, { $pull: { cards: this._id } })
-    //     .lean()
-    //     .exec();
     next();
 });
 

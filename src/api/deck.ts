@@ -90,7 +90,7 @@ export const updateDeck = async (req: Request, res: Response) => {
 };
 
 export const deleteDeck = async (req: Request, res: Response) => {
-    const id = req.params.cardId;
+    const id = req.params.deckId;
 
     if (!isValidObjectId(id)) {
         return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request"));

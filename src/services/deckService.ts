@@ -18,20 +18,21 @@ export const isDeckExisting = async (name: string) =>
 
 export const addCardService = async (deckId: string, front: string, back: string) => {
     const card = await createCardService(front, back);
-    const cardId = card.id.toString();
+    const cardId = Types.ObjectId(card.id.toString());
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    Deck.updateOne({ _id: Types.ObjectId(deckId) }, { $push: { cards: Types.ObjectId(cardId) } })
+    Deck.updateOne({ _id: Types.ObjectId(deckId) }, { $push: { cards: cardId } })
         .then((response) => {
             if (response.nModified === 0) {
-                Card.remove({ _id: Types.ObjectId(cardId) });
+                Card.remove({ _id: cardId });
                 throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
             }
         })
         .catch((error) => {
+            Card.remove({ _id: cardId });
             logError(error);
-            throw new HttpError();
+            throw error instanceof HttpError ? error : new HttpError();
         });
 
     return card;
@@ -99,18 +100,19 @@ export const updateDeckService = async (id: string, name: string, description: s
         })
         .catch((error) => {
             logError(error);
-            throw new HttpError();
+            throw error instanceof HttpError ? error : new HttpError();
         });
 };
 
 export const deleteDeckService = async (id: string) =>
-    Deck.deleteOne({ _id: Types.ObjectId(id) })
-        .then((response) => {
-            if (response.deletedCount === 0) {
+    Deck.findById(Types.ObjectId(id))
+        .then((deck) => {
+            if (!deck) {
                 throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
             }
+            deck.remove();
         })
         .catch((error) => {
             logError(error);
-            throw new HttpError();
+            throw error instanceof HttpError ? error : new HttpError();
         });
