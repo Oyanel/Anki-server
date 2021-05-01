@@ -17,7 +17,7 @@ export default async (app: Application) => {
     app.enable("trust proxy");
 
     app.use(cors());
-    app.use(logger({ stream: loggerConfig }));
+    app.use("combined", logger({ stream: loggerConfig }));
     app.use(json());
     app.use(cookieParser());
     app.use(urlencoded({ extended: false }));

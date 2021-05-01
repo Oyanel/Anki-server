@@ -109,3 +109,24 @@ export const deleteDeckService = async (id: string) =>
             logError(error);
             throw error instanceof HttpError ? error : new HttpError();
         });
+
+export const getDecksService = async () =>
+    Deck.find()
+        .lean()
+        .exec()
+        .then((decks) =>
+            decks.map((deckDocument) => {
+                const deck: IDeckResponse = {
+                    id: deckDocument._id,
+                    cards: deckDocument.cards as string[],
+                    description: deckDocument.description,
+                    name: deckDocument.name,
+                };
+
+                return deck;
+            })
+        )
+        .catch((error) => {
+            logError(error);
+            throw error instanceof HttpError ? error : new HttpError();
+        });

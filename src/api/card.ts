@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { deleteCardService, getCardService, updateCardService } from "../services/cardService";
+import { deleteCardService, getCardService, getCardsService, updateCardService } from "../services/cardService";
 import { sendError } from "../utils/error/error";
 import { EHttpStatus, HttpError } from "../utils";
 import { japaneseRegex, textRegex } from "../utils/validation/regex";
@@ -14,6 +14,16 @@ export const getCard = async (req: Request, res: Response) => {
 
     try {
         const card = await getCardService(id);
+
+        return res.json(card);
+    } catch (error) {
+        return sendError(res, error);
+    }
+};
+
+export const getCards = async (req: Request, res: Response) => {
+    try {
+        const card = await getCardsService();
 
         return res.json(card);
     } catch (error) {

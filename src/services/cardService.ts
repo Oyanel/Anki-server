@@ -80,3 +80,26 @@ export const deleteCardService = async (id: string) =>
             logError(error);
             throw error instanceof HttpError ? error : new HttpError();
         });
+
+export const getCardsService = async () =>
+    Card.find()
+        .lean()
+        .exec()
+        .then((cardDocuments) =>
+            cardDocuments.map((cardDocument) => {
+                const cards: ICardResponse = {
+                    id: cardDocument._id,
+                    back: cardDocument.back,
+                    front: cardDocument.front,
+                    lastReview: cardDocument.lastReview,
+                    nextReview: cardDocument.nextReview,
+                    views: cardDocument.views,
+                };
+
+                return cards;
+            })
+        )
+        .catch((error) => {
+            logError(error);
+            throw new HttpError();
+        });

@@ -6,6 +6,7 @@ import {
     createDeckService,
     deleteDeckService,
     getDeckService,
+    getDecksService,
     updateDeckService,
 } from "../services/deckService";
 import { validateDescription, validateName } from "../models/Deck/validate";
@@ -100,6 +101,16 @@ export const deleteDeck = async (req: Request, res: Response) => {
         await deleteDeckService(id);
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
+    } catch (error) {
+        return sendError(res, error);
+    }
+};
+
+export const getDecks = async (req: Request, res: Response) => {
+    try {
+        const decks = await getDecksService();
+
+        return res.json(decks);
     } catch (error) {
         return sendError(res, error);
     }
