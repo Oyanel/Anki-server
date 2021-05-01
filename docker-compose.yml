@@ -1,0 +1,40 @@
+version: '3.8'
+
+volumes:
+    db_data:
+  
+services:
+    mongo:
+        container_name: anki-db
+        image: mongo:4.2.6
+        ports:
+          - "127.0.0.1:27017:27017"
+        volumes:
+          - ${DB_DATA_PATH:-db_data}:/data/db
+        healthcheck:
+          test: "[ `echo 'db.runCommand(\"ping\").ok' | mongo localhost/example-database --quiet` ] && echo 0 || echo 1"
+          interval: 5s
+          start_period: 10s
+          timeout: 4s
+          retries: 3
+    
+    server:
+        container_name: anki-server
+        build:
+            context: ./
+            target: development
+        command: npm run start:dev
+        environment:
+            - PORT=3000
+            - MONGO_URL=mongodb://mongo:27017
+            - DATABASE_NAME=anki
+        ports:
+            - 3000:3000
+            - 9229:9229
+        depends_on:
+            - mongo
+        volumes:
+            - ./:/usr/src/app
+            - /usr/src/app/node_modules
+        restart: unless-stopped
+
