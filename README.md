@@ -11,16 +11,6 @@ To run the project locally, you'll need to follow these steps:
 ```shell
 use anki
 ```
-```shell
-db.createUser({
-  user: "admin",
-  pwd: "admin",
-  roles: [
-    { role: "readWrite", db: "anki" },
-    { role: "dbAdmin", db: "anki" },
-  ]
-});
-```
    
 4. Run these commands:
 
