@@ -14,7 +14,7 @@ use anki
 ```shell
 db.createUser({
   user: "admin",
-  pwd: passwordPrompt(),
+  pwd: "admin",
   roles: [
     { role: "readWrite", db: "anki" },
     { role: "dbAdmin", db: "anki" },
