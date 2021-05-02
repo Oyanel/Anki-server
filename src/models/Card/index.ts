@@ -22,6 +22,10 @@ const CardSchema = new Schema<TCardDocument>({
         type: Date,
         required: true,
     },
+    easeFactor: {
+        type: Number,
+        required: true,
+    },
     views: {
         type: Number,
         required: true,
