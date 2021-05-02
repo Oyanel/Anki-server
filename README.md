@@ -17,6 +17,9 @@ use anki
 `git clone <this repo>`
 
 `cd ./anki-server`
+
+Copy/paste the .env (ask maintainer)
+
 `npm install`
 
 Once the installation is completed run :
