@@ -1,18 +1,15 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, Types } from "mongoose";
 import { TCardDocument } from "./ICard";
-import { validateBack, validateFront } from "./validate";
 import Deck from "../Deck";
 
 const CardSchema = new Schema<TCardDocument>({
     front: {
-        type: String,
+        type: [String],
         required: true,
-        validate: { validator: validateFront, msg: "Not japanese chars" },
     },
     back: {
-        type: String,
+        type: [String],
         required: true,
-        validate: { validator: validateBack, msg: "Not regular text" },
     },
     lastReview: {
         type: Date,
@@ -21,6 +18,9 @@ const CardSchema = new Schema<TCardDocument>({
     nextReview: {
         type: Date,
         required: true,
+    },
+    referenceCard: {
+        type: Types.ObjectId,
     },
     easeFactor: {
         type: Number,

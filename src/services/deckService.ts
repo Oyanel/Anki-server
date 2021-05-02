@@ -1,34 +1,26 @@
 import { IDeck, IDeckResponse } from "../models/Deck/IDeck";
 import Deck from "../models/Deck";
 import { EHttpStatus, HttpError } from "../utils";
-import { logError } from "../utils/error/error";
 import { createCardService } from "./cardService";
 import { FilterQuery, Types } from "mongoose";
 
 export const isDeckExisting = async (condition: FilterQuery<IDeck>) =>
-    Deck.countDocuments(condition)
-        .then((count) => count > 0)
-        .catch((error: Error) => {
-            logError(error);
-            throw error;
-        });
+    Deck.countDocuments(condition).then((count) => count > 0);
 
-export const addCardService = async (deckId: string, front: string, back: string) => {
+export const addCardService = async (deckId: string, front: [String], back: [String]) => {
     if (!(await isDeckExisting({ _id: Types.ObjectId(deckId) }))) {
         throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
     }
 
-    const card = await createCardService(front, back);
-    const cardId = Types.ObjectId(card.id.toString());
+    const cards = await createCardService(front, back);
+    const cardId = Types.ObjectId(cards[0].id.toString());
+    const reversedCardId = Types.ObjectId(cards[1].id.toString());
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    Deck.updateOne({ _id: Types.ObjectId(deckId) }, { $push: { cards: cardId } }).catch((error) => {
-        logError(error);
-        throw error instanceof HttpError ? error : new HttpError();
-    });
+    Deck.updateOne({ _id: Types.ObjectId(deckId) }, { $push: { cards: { $each: [cardId, reversedCardId] } } });
 
-    return card;
+    return cards;
 };
 
 export const createDeckService = async (name: string, description: string) => {
@@ -42,73 +34,53 @@ export const createDeckService = async (name: string, description: string) => {
         cards: [],
     };
 
-    return Deck.create<IDeck>(newDeck)
-        .then((deckDocument) => {
-            const deckResponse: IDeckResponse = {
-                id: deckDocument._id,
-                name: deckDocument.name,
-                description: deckDocument.description,
-                cards: deckDocument.cards,
-            };
+    return Deck.create<IDeck>(newDeck).then((deckDocument) => {
+        const deckResponse: IDeckResponse = {
+            id: deckDocument._id,
+            name: deckDocument.name,
+            description: deckDocument.description,
+            cards: deckDocument.cards,
+        };
 
-            return deckResponse;
-        })
-        .catch((error) => {
-            logError(error);
-            throw new HttpError();
-        });
+        return deckResponse;
+    });
 };
 
 export const getDeckService = async (id: string) =>
-    Deck.findById(Types.ObjectId(id))
-        .then((deckDocument) => {
-            if (!deckDocument) {
-                throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
-            }
+    Deck.findById(Types.ObjectId(id)).then((deckDocument) => {
+        if (!deckDocument) {
+            throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
+        }
 
-            const deckResponse: IDeckResponse = {
-                id: deckDocument._id,
-                name: deckDocument.name,
-                description: deckDocument.description,
-                cards: deckDocument.cards,
-            };
+        const deckResponse: IDeckResponse = {
+            id: deckDocument._id,
+            name: deckDocument.name,
+            description: deckDocument.description,
+            cards: deckDocument.cards,
+        };
 
-            return deckResponse;
-        })
-        .catch((error) => {
-            logError(error);
-            throw error instanceof HttpError ? error : new HttpError();
-        });
+        return deckResponse;
+    });
 
 export const updateDeckService = async (id: string, name: string, description: string) => {
     if (await isDeckExisting({ name })) {
         throw new HttpError(EHttpStatus.BAD_REQUEST, "The deck name already exists");
     }
 
-    Deck.updateOne({ _id: Types.ObjectId(id) }, { name, description })
-        .then((response) => {
-            if (response.nModified === 0) {
-                throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
-            }
-        })
-        .catch((error) => {
-            logError(error);
-            throw error instanceof HttpError ? error : new HttpError();
-        });
+    Deck.updateOne({ _id: Types.ObjectId(id) }, { name, description }).then((response) => {
+        if (response.nModified === 0) {
+            throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
+        }
+    });
 };
 
 export const deleteDeckService = async (id: string) =>
-    Deck.findById(Types.ObjectId(id))
-        .then((deck) => {
-            if (!deck) {
-                throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
-            }
-            deck.remove();
-        })
-        .catch((error) => {
-            logError(error);
-            throw error instanceof HttpError ? error : new HttpError();
-        });
+    Deck.findById(Types.ObjectId(id)).then((deck) => {
+        if (!deck) {
+            throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
+        }
+        deck.remove();
+    });
 
 export const getDecksService = async () =>
     Deck.find()
@@ -125,8 +97,4 @@ export const getDecksService = async () =>
 
                 return deck;
             })
-        )
-        .catch((error) => {
-            logError(error);
-            throw error instanceof HttpError ? error : new HttpError();
-        });
+        );

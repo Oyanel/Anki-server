@@ -23,7 +23,7 @@ export const login = async (req: Request, res: Response) => {
 
         return res.json(token);
     } catch (error) {
-        return sendError(res, error);
+        return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };
 
@@ -49,7 +49,7 @@ export const register = async (req: Request, res: Response) => {
 
         return res.sendStatus(EHttpStatus.CREATED);
     } catch (error) {
-        return sendError(res, error);
+        return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };
 
@@ -65,6 +65,6 @@ export const refreshToken = async (req: Request, res: Response) => {
 
         return res.json({ token: newToken });
     } catch (error) {
-        return sendError(res, error);
+        return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };

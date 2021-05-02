@@ -35,7 +35,6 @@ export const routes = (app: Application) => {
 
     app.use("/api/v1", publicRouter);
     app.use("/api/v1/private/auth", verifyToken, privateRouter);
-
     // Send Not Found error if no route is found.
     app.use((req, res) => {
         const error = new HttpError(EHttpStatus.NOT_FOUND, "Not Found");

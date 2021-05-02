@@ -1,130 +1,80 @@
-import { ICard, ICardResponse, ICardReview } from "../models/Card/ICard";
+import { ICard, ICardResponse, ICardReview, TCardDocument } from "../models/Card/ICard";
 import { addDays, differenceInDays } from "date-fns";
 import Card from "../models/Card";
 import { EHttpStatus, HttpError } from "../utils";
-import { logError } from "../utils/error/error";
 import { Types } from "mongoose";
 
-export const createCardService = async (front: String, back: String) => {
+export const createCardService = async (front: [String], back: [String]) => {
     const newCard: ICard = {
         back,
         front,
+        referenceCard: undefined,
         lastReview: new Date(),
         nextReview: addDays(new Date(), 1),
         easeFactor: 2.5,
         views: 0,
     };
 
-    return Card.create<ICard>(newCard)
-        .then((cardDocument) => {
-            const cardResponse: ICardResponse = {
-                id: cardDocument._id,
-                back: cardDocument.back,
-                front: cardDocument.front,
-                lastReview: cardDocument.lastReview,
-                nextReview: cardDocument.lastReview,
-                views: cardDocument.views,
-            };
+    return Card.create<ICard>(newCard).then(async (cardDocument) => {
+        const reversedCard = getNewReversedCard(cardDocument);
 
-            return cardResponse;
-        })
-        .catch((error) => {
-            logError(error);
-            throw new HttpError();
-        });
+        return await Card.create<ICard>(reversedCard)
+            .then((reversedCardDocument) => [getCardResponse(cardDocument), getCardResponse(reversedCardDocument)])
+            .catch((error) => {
+                cardDocument.delete();
+                throw error;
+            });
+    });
 };
 
 export const getCardService = async (id: string) =>
-    Card.findById(Types.ObjectId(id))
-        .then((cardDocument) => {
-            if (!cardDocument) {
-                throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
-            }
+    Card.findById(Types.ObjectId(id)).then((cardDocument) => {
+        if (!cardDocument) {
+            throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
+        }
 
-            const cardResponse: ICardResponse = {
-                id: cardDocument._id,
-                back: cardDocument.back,
-                front: cardDocument.front,
-                lastReview: cardDocument.lastReview,
-                nextReview: cardDocument.lastReview,
-                views: cardDocument.views,
-            };
+        return getCardResponse(cardDocument);
+    });
 
-            return cardResponse;
-        })
-        .catch((error) => {
-            logError(error);
-            throw error instanceof HttpError ? error : new HttpError();
-        });
-
-export const updateCardService = async (id: string, front: String, back: String) =>
-    Card.updateOne({ _id: Types.ObjectId(id) }, { front, back })
-        .then((response) => {
-            if (response.nModified === 0) {
-                throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
-            }
-        })
-        .catch((error) => {
-            logError(error);
-            throw error instanceof HttpError ? error : new HttpError();
-        });
+export const updateCardService = async (id: string, front: [String], back: [String]) =>
+    Card.updateOne({ _id: Types.ObjectId(id) }, { front, back }).then((response) => {
+        if (response.nModified === 0) {
+            throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
+        }
+    });
 
 export const deleteCardService = async (id: string) =>
-    Card.findById(Types.ObjectId(id))
-        .then((card) => {
-            if (!card) {
-                throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
-            }
-            card.remove();
-        })
-        .catch((error) => {
-            logError(error);
-            throw error instanceof HttpError ? error : new HttpError();
-        });
+    Card.findById(Types.ObjectId(id)).then((card) => {
+        if (!card) {
+            throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
+        }
+        card.remove();
+    });
 
 export const reviewCardService = async (id: string, reviewQuality: number) => {
-    return Card.findById(Types.ObjectId(id))
-        .then((card) => {
-            if (!card) {
-                throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
-            }
+    return Card.findById(Types.ObjectId(id)).then((card) => {
+        if (!card) {
+            throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
+        }
 
-            const newCardReview = getNextReview(reviewQuality.valueOf(), card);
-            card.nextReview = newCardReview.nextReview;
-            card.lastReview = new Date();
-            card.views = newCardReview.views;
-            card.easeFactor = newCardReview.easeFactor;
+        const newCardReview = getNextReview(reviewQuality.valueOf(), card);
+        card.nextReview = newCardReview.nextReview;
+        card.lastReview = new Date();
+        card.views = newCardReview.views;
+        card.easeFactor = newCardReview.easeFactor;
 
-            card.save();
-        })
-        .catch((error) => {
-            logError(error);
-            throw error instanceof HttpError ? error : new HttpError();
-        });
+        card.save();
+    });
 };
 
 export const getCardsService = async () =>
     Card.find()
-        .lean()
         .exec()
         .then((cardDocuments) =>
             cardDocuments.map((cardDocument) => {
-                const cards: ICardResponse = {
-                    id: cardDocument._id,
-                    back: cardDocument.back,
-                    front: cardDocument.front,
-                    lastReview: cardDocument.lastReview,
-                    nextReview: cardDocument.nextReview,
-                    views: cardDocument.views,
-                };
-
-                return cards;
+                return getCardResponse(cardDocument);
             })
-        )
-        .catch((error) => {
-            logError(error);
-            throw new HttpError();
-        });
+        );
 
 /**
  * Use the SM-2 algorithm.
@@ -182,4 +132,32 @@ const getNextReview = (quality: number, card: ICard) => {
 
 const getNewEaseFactor = (easeFactor, quality) => {
     return easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+};
+
+const getNewReversedCard = (card: TCardDocument) => {
+    const reservedCard: ICard = {
+        front: card.back,
+        back: card.front,
+        referenceCard: card._id,
+        easeFactor: 2.5,
+        nextReview: addDays(new Date(), 1),
+        views: 0,
+        lastReview: new Date(),
+    };
+
+    return reservedCard;
+};
+
+const getCardResponse = (cardDocument: TCardDocument) => {
+    const card: ICardResponse = {
+        id: cardDocument._id,
+        back: cardDocument.back,
+        front: cardDocument.front,
+        lastReview: cardDocument.lastReview,
+        nextReview: cardDocument.nextReview,
+        views: cardDocument.views,
+        isReversed: !!cardDocument.referenceCard,
+    };
+
+    return card;
 };

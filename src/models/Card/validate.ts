@@ -1,9 +1,5 @@
 import { japaneseRegex, textRegex } from "../../utils/validation/regex";
 
-export const validateFront = (text: string) => {
-    return japaneseRegex.test(text);
-};
+export const validateFront = (texts: [String]) => texts.map((text) => japaneseRegex.test(text.valueOf()));
 
-export const validateBack = (text: string) => {
-    return textRegex.test(text);
-};
+export const validateBack = (texts: [String]) => texts.map((text) => textRegex.test(text.valueOf()));

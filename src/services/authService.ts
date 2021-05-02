@@ -5,7 +5,6 @@ import { IUser } from "../models/authentication/User/IUser";
 import { sign, verify } from "jsonwebtoken";
 import "dotenv";
 import { EHttpStatus, HttpError } from "../utils";
-import { logError } from "../utils/error/error";
 import { compare, hashSync } from "bcrypt";
 import { SALT_ROUND } from "../constant";
 import { addHours, addMinutes } from "date-fns";
@@ -19,12 +18,7 @@ const saveToken = async (accessToken: String, refreshToken: String, user: IUser)
         refreshTokenExpiresAt: addHours(new Date(), 4),
     };
 
-    await Token.findOneAndReplace({ user: user.username }, tokenModel, { upsert: true })
-        .then((token) => token)
-        .catch((error: Error) => {
-            logError(error);
-            throw new HttpError();
-        });
+    Token.findOneAndReplace({ user: user.username }, tokenModel, { upsert: true });
 
     return tokenModel;
 };
@@ -53,19 +47,9 @@ export const loginService = async (user: IUser) =>
             }
 
             return await generateToken(user);
-        })
-        .catch((error: Error) => {
-            logError(error);
-            throw new HttpError(EHttpStatus.UNAUTHORIZED, "Username or password incorrect.");
         });
 
-const isUserExisting = (username: String) =>
-    User.countDocuments({ username })
-        .then((count) => count > 0)
-        .catch((error: Error) => {
-            logError(error);
-            throw error;
-        });
+const isUserExisting = (username: String) => User.countDocuments({ username }).then((count) => count > 0);
 
 export const registerService = async (user: IUser) => {
     if (await isUserExisting(user.username)) {
@@ -74,10 +58,7 @@ export const registerService = async (user: IUser) => {
 
     user.password = hashSync(user.password, SALT_ROUND);
 
-    User.create<IUser>(user).catch((error: Error) => {
-        logError(error);
-        throw new HttpError();
-    });
+    await User.create<IUser>(user);
 };
 
 export const refreshTokenService = async (refreshToken: String) => {

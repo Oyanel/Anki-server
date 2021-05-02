@@ -9,6 +9,6 @@ export const sendError = (res: Response, error: HttpError) => {
     return res.json({ error });
 };
 
-export const logError = (error: Error) => {
+export const logError = (error: Error | HttpError) => {
     logger.error(error);
 };
