@@ -5,7 +5,7 @@
     "main": "dist/app.js",
     "scripts": {
         "start": "tsc && node dist/app.js",
-        "start:dev": "nodemon --watch src/ -e ts index.js",
+        "start:dev": "nodemon -L --watch src/ -e ts index.js",
         "lint": "eslint --ext .ts,.tsx src/**/*.ts",
         "compile": "tsc --noEmit"
     },

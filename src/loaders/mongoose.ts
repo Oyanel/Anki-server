@@ -2,7 +2,10 @@ import { connect, disconnect, connection } from "mongoose";
 
 export const mongooseInit = () => {
     const mongooseConnect = () => {
-        connect(`${process.env.MONGO_URL}/${process.env.DATABASE_NAME}`, { useNewUrlParser: true });
+        connect(`${process.env.MONGO_URL}/${process.env.DATABASE_NAME}`, {
+            useNewUrlParser: true,
+            ignoreUndefined: true,
+        });
     };
 
     connection.on("error", () => {

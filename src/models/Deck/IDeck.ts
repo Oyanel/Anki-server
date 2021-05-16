@@ -10,4 +10,9 @@ export interface IDeckResponse extends IDeck {
     id: String;
 }
 
+export interface IQueryDeck {
+    name?: string;
+    createdAt?: string;
+}
+
 export type TDeckDocument = IDeck & Document;

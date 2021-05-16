@@ -3,7 +3,7 @@ import { EHttpStatus, HttpError, verifyToken } from "../utils";
 import { login, refreshToken, register } from "./auth";
 import { sendError } from "../utils/error/error";
 import { deleteCard, getCard, getCards, reviewCard, updateCard } from "./card";
-import { addCard, createDeck, deleteDeck, getDeck, getDecks, updateDeck } from "./deck";
+import { addCard, createDeck, deleteDeck, getDeck, searchDecks, updateDeck } from "./deck";
 import { test } from "./test";
 
 export const routes = (app: Application) => {
@@ -26,7 +26,7 @@ export const routes = (app: Application) => {
     privateRouter.delete("/cards/:cardId", deleteCard);
 
     // Deck
-    privateRouter.get("/decks", getDecks);
+    privateRouter.get("/decks/search", searchDecks);
     privateRouter.post("/decks", createDeck);
     privateRouter.put("/decks/:deckId", updateDeck);
     privateRouter.delete("/decks/:deckId", deleteDeck);

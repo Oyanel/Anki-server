@@ -1,8 +1,8 @@
-import { IDeck, IDeckResponse } from "../models/Deck/IDeck";
+import { IDeck, IDeckResponse, IQueryDeck, TDeckDocument } from "../models/Deck/IDeck";
 import Deck from "../models/Deck";
 import { EHttpStatus, HttpError } from "../utils";
 import { createCardService } from "./cardService";
-import { FilterQuery, Types } from "mongoose";
+import { FilterQuery, LeanDocument, Types } from "mongoose";
 
 export const isDeckExisting = async (condition: FilterQuery<IDeck>) =>
     Deck.countDocuments(condition).then((count) => count > 0);
@@ -34,16 +34,7 @@ export const createDeckService = async (name: string, description: string) => {
         cards: [],
     };
 
-    return Deck.create<IDeck>(newDeck).then((deckDocument) => {
-        const deckResponse: IDeckResponse = {
-            id: deckDocument._id,
-            name: deckDocument.name,
-            description: deckDocument.description,
-            cards: deckDocument.cards,
-        };
-
-        return deckResponse;
-    });
+    return Deck.create<IDeck>(newDeck).then((deckDocument) => getDeckResponse(deckDocument));
 };
 
 export const getDeckService = async (id: string) =>
@@ -52,14 +43,7 @@ export const getDeckService = async (id: string) =>
             throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
         }
 
-        const deckResponse: IDeckResponse = {
-            id: deckDocument._id,
-            name: deckDocument.name,
-            description: deckDocument.description,
-            cards: deckDocument.cards,
-        };
-
-        return deckResponse;
+        return getDeckResponse(deckDocument);
     });
 
 export const updateDeckService = async (id: string, name: string, description: string) => {
@@ -82,19 +66,21 @@ export const deleteDeckService = async (id: string) =>
         deck.remove();
     });
 
-export const getDecksService = async () =>
-    Deck.find()
+export const searchDecksService = async (query: IQueryDeck) =>
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    Deck.find({ name: { $regex: new RegExp(query.name ?? "", "i") }, createdAt: { $gt: query.createdAt } })
         .lean()
         .exec()
-        .then((decks) =>
-            decks.map((deckDocument) => {
-                const deck: IDeckResponse = {
-                    id: deckDocument._id,
-                    cards: deckDocument.cards as string[],
-                    description: deckDocument.description,
-                    name: deckDocument.name,
-                };
+        .then((decks) => decks.map((deckDocument) => getDeckResponse(deckDocument)));
 
-                return deck;
-            })
-        );
+const getDeckResponse = (deckDocument: TDeckDocument | LeanDocument<TDeckDocument>) => {
+    const deck: IDeckResponse = {
+        id: deckDocument._id,
+        name: deckDocument.name,
+        description: deckDocument.description,
+        cards: deckDocument.cards as String[],
+    };
+
+    return deck;
+};

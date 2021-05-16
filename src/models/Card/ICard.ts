@@ -1,8 +1,8 @@
 import { Document } from "mongoose";
 
 export interface ICard {
-    front: [String];
-    back: [String];
+    front: String[];
+    back: String[];
     referenceCard?: String;
     lastReview: Date;
     nextReview: Date;

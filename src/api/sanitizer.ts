@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { EHttpStatus, HttpError } from "../utils";
+import { DATE_FORMAT, EHttpStatus, HttpError } from "../utils";
+import { Request } from "express";
+import { IQueryDeck } from "../models/Deck/IDeck";
+import { formatISO, parse } from "date-fns";
 
 export const sanitizeCardRequest = (frontRequest: any, backRequest: any) => {
     try {
@@ -26,5 +29,21 @@ export const sanitizeDeckRequest = (nameRequest: any, descriptionRequest: any) =
         };
     } catch (error) {
         throw new HttpError(EHttpStatus.BAD_REQUEST, "The name/description fields are not strings");
+    }
+};
+
+export const sanitizeDeckQueryRequest = (request: Request) => {
+    try {
+        const name = request.query.name && String(request.query.name);
+        const createdAt = request.query.createdAt && String(request.query.createdAt);
+
+        const query: IQueryDeck = {
+            name,
+            createdAt: createdAt ? formatISO(parse(createdAt, DATE_FORMAT, new Date())) : undefined,
+        };
+
+        return query;
+    } catch (error) {
+        throw new HttpError(EHttpStatus.BAD_REQUEST, "The query is malformed");
     }
 };

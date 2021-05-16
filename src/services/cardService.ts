@@ -2,7 +2,7 @@ import { ICard, ICardResponse, ICardReview, TCardDocument } from "../models/Card
 import { addDays, differenceInDays } from "date-fns";
 import Card from "../models/Card";
 import { EHttpStatus, HttpError } from "../utils";
-import { Types } from "mongoose";
+import { LeanDocument, Types } from "mongoose";
 
 export const createCardService = async (front: [String], back: [String]) => {
     const newCard: ICard = {
@@ -69,12 +69,9 @@ export const reviewCardService = async (id: string, reviewQuality: number) => {
 
 export const getCardsService = async () =>
     Card.find()
+        .lean()
         .exec()
-        .then((cardDocuments) =>
-            cardDocuments.map((cardDocument) => {
-                return getCardResponse(cardDocument);
-            })
-        );
+        .then((cardDocuments) => cardDocuments.map((cardDocument) => getCardResponse(cardDocument)));
 
 /**
  * Use the SM-2 algorithm.
@@ -148,11 +145,11 @@ const getNewReversedCard = (card: TCardDocument) => {
     return reservedCard;
 };
 
-const getCardResponse = (cardDocument: TCardDocument) => {
+const getCardResponse = (cardDocument: TCardDocument | LeanDocument<TCardDocument>) => {
     const card: ICardResponse = {
         id: cardDocument._id,
-        back: cardDocument.back,
-        front: cardDocument.front,
+        back: cardDocument.back as String[],
+        front: cardDocument.front as String[],
         lastReview: cardDocument.lastReview,
         nextReview: cardDocument.nextReview,
         views: cardDocument.views,
