@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DATE_FORMAT, EHttpStatus, HttpError } from "../utils";
+import { EHttpStatus, HttpError } from "../utils";
 import { Request } from "express";
-import { IQueryDeck } from "../models/Deck/IDeck";
-import { formatISO, parse } from "date-fns";
+import { IQueryCard } from "../models/Card/ICard";
 
-export const sanitizeCardRequest = (frontRequest: any, backRequest: any) => {
+export const sanitizeCardUpdateRequest = (request: Request) => {
     try {
+        const frontRequest = request.body.front;
+        const backRequest = request.body.back;
+
         const front = frontRequest.map((frontItem) => String(frontItem));
         const back = backRequest.map((backItem) => String(backItem));
 
@@ -32,14 +34,18 @@ export const sanitizeDeckRequest = (nameRequest: any, descriptionRequest: any) =
     }
 };
 
-export const sanitizeDeckQueryRequest = (request: Request) => {
+export const sanitizeCardQueryRequest = (request: Request) => {
     try {
         const name = request.query.name && String(request.query.name);
-        const createdAt = request.query.createdAt && String(request.query.createdAt);
+        let toReview;
 
-        const query: IQueryDeck = {
+        if (request.query.toReview !== undefined) {
+            toReview = request.query.toReview !== "false";
+        }
+
+        const query: IQueryCard = {
             name,
-            createdAt: createdAt ? formatISO(parse(createdAt, DATE_FORMAT, new Date())) : undefined,
+            toReview,
         };
 
         return query;

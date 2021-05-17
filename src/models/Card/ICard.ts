@@ -23,6 +23,11 @@ export interface ICardReview {
     views: Number;
 }
 
+export interface IQueryCard {
+    name?: string;
+    toReview?: boolean;
+}
+
 export const CARD_REVIEW_LEVEL = {
     BLACKOUT: 0,
     FAILED: 1,

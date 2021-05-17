@@ -1,4 +1,4 @@
-import { ICard, ICardResponse, ICardReview, TCardDocument } from "../models/Card/ICard";
+import { ICard, ICardResponse, ICardReview, IQueryCard, TCardDocument } from "../models/Card/ICard";
 import { addDays, differenceInDays } from "date-fns";
 import Card from "../models/Card";
 import { EHttpStatus, HttpError } from "../utils";
@@ -65,6 +65,27 @@ export const reviewCardService = async (id: string, reviewQuality: number) => {
 
         card.save();
     });
+};
+
+export const searchCardsService = async (query: IQueryCard) => {
+    const nameCondition = { $in: new RegExp(query.name ?? "", "i") };
+    let nextReviewCondition;
+
+    if (query.toReview !== undefined) {
+        nextReviewCondition = query.toReview ? { $lt: new Date() } : { $gt: new Date() };
+    }
+
+    const conditions = {
+        $or: [{ front: nameCondition }, { back: nameCondition }],
+        nextReview: nextReviewCondition,
+    };
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return Card.find(conditions)
+        .lean()
+        .exec()
+        .then((cardDocuments) => cardDocuments.map((cardDocument) => getCardResponse(cardDocument)));
 };
 
 export const getCardsService = async () =>

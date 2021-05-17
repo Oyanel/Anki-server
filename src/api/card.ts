@@ -2,15 +2,15 @@ import { Request, Response } from "express";
 import {
     deleteCardService,
     getCardService,
-    getCardsService,
     reviewCardService,
+    searchCardsService,
     updateCardService,
 } from "../services/cardService";
 import { sendError } from "../utils/error/error";
 import { EHttpStatus, HttpError } from "../utils";
 import { isValidObjectId } from "mongoose";
 import { CARD_REVIEW_LEVEL } from "../models/Card/ICard";
-import { sanitizeCardRequest } from "./sanitizer";
+import { sanitizeCardQueryRequest, sanitizeCardUpdateRequest } from "./sanitizer";
 
 export const getCard = async (req: Request, res: Response) => {
     const id = req.params.cardId;
@@ -28,9 +28,10 @@ export const getCard = async (req: Request, res: Response) => {
     }
 };
 
-export const getCards = async (req: Request, res: Response) => {
+export const searchCards = async (req: Request, res: Response) => {
     try {
-        const card = await getCardsService();
+        const query = sanitizeCardQueryRequest(req);
+        const card = await searchCardsService(query);
 
         return res.json(card);
     } catch (error) {
@@ -40,15 +41,13 @@ export const getCards = async (req: Request, res: Response) => {
 
 export const updateCard = async (req: Request, res: Response) => {
     const id = req.params.cardId;
-    const frontRequest = req.body.front;
-    const backRequest = req.body.back;
 
     try {
         if (!isValidObjectId(id)) {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Card id invalid"));
         }
 
-        const { front, back } = sanitizeCardRequest(frontRequest, backRequest);
+        const { front, back } = sanitizeCardUpdateRequest(req);
         await updateCardService(id, front, back);
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
