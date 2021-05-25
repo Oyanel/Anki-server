@@ -7,7 +7,7 @@ import {
     updateCardService,
 } from "../services/cardService";
 import { sendError } from "../utils/error/error";
-import { EHttpStatus, HttpError } from "../utils";
+import { EHttpStatus, getCurrentUser, HttpError } from "../utils";
 import { isValidObjectId } from "mongoose";
 import { CARD_REVIEW_LEVEL } from "../models/Card/ICard";
 import { sanitizeCardQueryRequest, sanitizeCardUpdateRequest } from "./sanitizer";
@@ -48,7 +48,9 @@ export const updateCard = async (req: Request, res: Response) => {
         }
 
         const { front, back } = sanitizeCardUpdateRequest(req);
-        await updateCardService(id, front, back);
+
+        const user = getCurrentUser(req.headers.authorization.split(" ")[1]);
+        await updateCardService(user.profile.decks, id, front, back);
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {
@@ -63,7 +65,8 @@ export const deleteCard = async (req: Request, res: Response) => {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Card id invalid"));
         }
 
-        await deleteCardService(id);
+        const user = getCurrentUser(req.headers.authorization.split(" ")[1]);
+        await deleteCardService(user.profile.decks, id);
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {
@@ -81,7 +84,8 @@ export const reviewCard = async (req: Request, res: Response) => {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request"));
         }
 
-        await reviewCardService(id, reviewLevel);
+        const user = getCurrentUser(req.headers.authorization.split(" ")[1]);
+        await reviewCardService(user.profile.decks, id, reviewLevel);
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {

@@ -1,3 +1,6 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+
 import { IDeck, IDeckResponse, IQueryDeck, TDeckDocument } from "../models/Deck/IDeck";
 import Deck from "../models/Deck";
 import { EHttpStatus, HttpError } from "../utils";
@@ -8,7 +11,20 @@ import { addDeckToProfile, isDeckOwned } from "./userService";
 export const isDeckExisting = async (condition: FilterQuery<IDeck>) =>
     Deck.countDocuments(condition).then((count) => count > 0);
 
-export const addCardService = async (userEmail: string, deckId: string, front: [String], back: [String]) => {
+export const isCardOwned = async (userDecks: String[], cardId: string) => {
+    return await Deck.countDocuments({
+        _id: {
+            $in: userDecks,
+        },
+        cards: {
+            $in: Types.ObjectId(cardId),
+        },
+    })
+        .exec()
+        .then((count) => count > 0);
+};
+
+export const addCardService = async (userEmail: string, deckId: string, front: String[], back: String[]) => {
     if (!(await isDeckExisting({ _id: Types.ObjectId(deckId) }))) {
         throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
     }
@@ -21,9 +37,13 @@ export const addCardService = async (userEmail: string, deckId: string, front: [
     const cardId = Types.ObjectId(cards[0].id.toString());
     const reversedCardId = Types.ObjectId(cards[1].id.toString());
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    Deck.updateOne({ _id: Types.ObjectId(deckId) }, { $push: { cards: { $each: [cardId, reversedCardId] } } });
+    await Deck.findOne({ _id: Types.ObjectId(deckId) })
+        .exec()
+        .then((deck) => {
+            deck.cards.push(cardId);
+            deck.cards.push(reversedCardId);
+            deck.save();
+        });
 
     return cards;
 };

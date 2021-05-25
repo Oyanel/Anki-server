@@ -1,6 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-nocheck
-
 import { Types, model, Schema } from "mongoose";
 import { validateName, validateDescription } from "./validate";
 import { TDeckDocument } from "./IDeck";
@@ -31,14 +28,6 @@ DeckSchema.pre("remove", async function (next) {
             $in: this.cards,
         },
     }).exec();
-
-    console.log({
-        profile: {
-            $pull: {
-                decks: this._id,
-            },
-        },
-    });
 
     const userPromise = User.update(
         {

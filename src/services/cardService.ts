@@ -3,6 +3,7 @@ import { addDays, differenceInDays } from "date-fns";
 import Card from "../models/Card";
 import { EHttpStatus, HttpError } from "../utils";
 import { LeanDocument, Types } from "mongoose";
+import { isCardOwned } from "./deckService";
 
 export const createCardService = async (front: [String], back: [String]) => {
     const newCard: ICard = {
@@ -36,25 +37,39 @@ export const getCardService = async (id: string) =>
         return getCardResponse(cardDocument);
     });
 
-export const updateCardService = async (id: string, front: [String], back: [String]) =>
+export const updateCardService = async (userDecks: String[], id: string, front: String[], back: String[]) => {
+    if (!(await isCardOwned(userDecks, id))) {
+        throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
+    }
+
     Card.updateOne({ _id: Types.ObjectId(id) }, { front, back }).then((response) => {
         if (response.nModified === 0) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
         }
     });
+};
 
-export const deleteCardService = async (id: string) =>
-    Card.findById(Types.ObjectId(id)).then((card) => {
+export const deleteCardService = async (userDecks: String[], id: string) =>
+    Card.findById(Types.ObjectId(id)).then(async (card) => {
         if (!card) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
         }
+
+        if (!(await isCardOwned(userDecks, id))) {
+            throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
+        }
+
         card.deleteOne();
     });
 
-export const reviewCardService = async (id: string, reviewQuality: number) => {
-    return Card.findById(Types.ObjectId(id)).then((card) => {
+export const reviewCardService = async (userDecks: String[], id: string, reviewQuality: number) =>
+    Card.findById(Types.ObjectId(id)).then(async (card) => {
         if (!card) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
+        }
+
+        if (!(await isCardOwned(userDecks, id))) {
+            throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
         }
 
         const newCardReview = getNextReview(reviewQuality.valueOf(), card);
@@ -65,7 +80,6 @@ export const reviewCardService = async (id: string, reviewQuality: number) => {
 
         card.save();
     });
-};
 
 export const searchCardsService = async (query: IQueryCard) => {
     const nameCondition = { $in: new RegExp(query.name ?? "", "i") };
@@ -87,12 +101,6 @@ export const searchCardsService = async (query: IQueryCard) => {
         .exec()
         .then((cardDocuments) => cardDocuments.map((cardDocument) => getCardResponse(cardDocument)));
 };
-
-export const getCardsService = async () =>
-    Card.find()
-        .lean()
-        .exec()
-        .then((cardDocuments) => cardDocuments.map((cardDocument) => getCardResponse(cardDocument)));
 
 /**
  * Use the SM-2 algorithm.

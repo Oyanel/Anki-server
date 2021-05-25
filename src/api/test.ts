@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
-import { isDeckOwned } from "../services/userService";
+import { isCardOwned } from "../services/deckService";
+import { getCurrentUser } from "../utils";
 
 export const test = async (req: Request, res: Response) => {
-    const rere = await isDeckOwned("admin2@test.com", "60ad67ea4e956705c441fd49");
+    const user = getCurrentUser(req.headers.authorization.split(" ")[1]);
+    const rere = await isCardOwned(user.profile.decks, "60ad7231debe910849eda662");
 
     res.send(rere);
 };
