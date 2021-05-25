@@ -1,21 +1,23 @@
 import { Request, Response } from "express";
-import { IUser } from "../models/authentication/User/IUser";
-import { loginService, refreshTokenService, registerService } from "../services/authService";
+import { IUserBase, IUserRegistration } from "../models/authentication/User/IUser";
+import { loginService, refreshTokenService } from "../services/authService";
 import { isEmail, isStrongPassword, isJWT } from "validator";
 import { sendError } from "../utils/error/error";
 import { HttpError, EHttpStatus } from "../utils";
+import { validateUsername } from "../models/authentication/User/validate";
+import { registerService } from "../services/userService";
 
 export const login = async (req: Request, res: Response) => {
-    const username = req.body.username;
+    const email = req.body.email;
     const password = req.body.password;
 
     try {
-        if (!username || !password || !isEmail(username)) {
-            return sendError(res, new HttpError(EHttpStatus.UNAUTHORIZED, "Username or Password invalid"));
+        if (!email || !password || !isEmail(email)) {
+            return sendError(res, new HttpError(EHttpStatus.UNAUTHORIZED, "Email or Password invalid"));
         }
 
-        const user: IUser = {
-            username: req.body.username,
+        const user: IUserBase = {
+            email: req.body.email,
             password: req.body.password,
         };
 
@@ -28,21 +30,27 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const register = async (req: Request, res: Response) => {
-    const username = req.body.username;
+    const email = req.body.email;
     const password = req.body.password;
+    const username = req.body.username;
 
     try {
-        if (!isEmail(username)) {
-            return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Username invalid"));
+        if (!isEmail(email)) {
+            return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Email invalid"));
         }
 
         if (!isStrongPassword(password)) {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Password invalid"));
         }
 
-        const user: IUser = {
-            username,
+        if (!validateUsername(username)) {
+            return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Username incorrect"));
+        }
+
+        const user: IUserRegistration = {
+            email,
             password,
+            username,
         };
 
         await registerService(user);

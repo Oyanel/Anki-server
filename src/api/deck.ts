@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { sendError } from "../utils/error/error";
-import { EHttpStatus, HttpError } from "../utils";
+import { EHttpStatus, getCurrentUser, HttpError } from "../utils";
 import {
     addCardService,
     createDeckService,
@@ -11,21 +11,20 @@ import {
 } from "../services/deckService";
 import { validateDescription, validateName } from "../models/Deck/validate";
 import { isValidObjectId } from "mongoose";
-import { sanitizeCardRequest, sanitizeDeckQueryRequest, sanitizeDeckRequest } from "./sanitizer";
+import { sanitizeCardUpdateRequest, sanitizeDeckRequest, sanitizeDeckQueryRequest } from "./sanitizer";
 
 export const addCard = async (req: Request, res: Response) => {
     const id = req.params.deckId;
-    const frontRequest = req.body.front;
-    const backRequest = req.body.back;
 
     try {
         if (!isValidObjectId(id)) {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Deck id invalid"));
         }
 
-        const { front, back } = sanitizeCardRequest(frontRequest, backRequest);
+        const { front, back } = sanitizeCardUpdateRequest(req);
 
-        const newCard = await addCardService(id, front, back);
+        const user = getCurrentUser(req.headers.authorization.split(" ")[1]);
+        const newCard = await addCardService(user.email.valueOf(), id, front, back);
 
         return res.status(EHttpStatus.CREATED).json(newCard);
     } catch (error) {
@@ -44,7 +43,9 @@ export const createDeck = async (req: Request, res: Response) => {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Deck invalid"));
         }
 
-        const newDeck = await createDeckService(name, description);
+        const user = getCurrentUser(req.headers.authorization.split(" ")[1]);
+
+        const newDeck = await createDeckService(user.email.valueOf(), name, description);
 
         return res.status(EHttpStatus.CREATED).json(newDeck);
     } catch (error) {
@@ -60,7 +61,8 @@ export const getDeck = async (req: Request, res: Response) => {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request"));
         }
 
-        const deck = await getDeckService(id);
+        const user = getCurrentUser(req.headers.authorization.split(" ")[1]);
+        const deck = await getDeckService(user.email.valueOf(), id);
 
         return res.json(deck);
     } catch (error) {
@@ -84,7 +86,8 @@ export const updateDeck = async (req: Request, res: Response) => {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Card invalid"));
         }
 
-        await updateDeckService(id, name, description);
+        const user = getCurrentUser(req.headers.authorization.split(" ")[1]);
+        await updateDeckService(user.email.valueOf(), id, name, description);
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {
@@ -100,7 +103,8 @@ export const deleteDeck = async (req: Request, res: Response) => {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request"));
         }
 
-        await deleteDeckService(id);
+        const user = getCurrentUser(req.headers.authorization.split(" ")[1]);
+        await deleteDeckService(user.email.valueOf(), id);
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {

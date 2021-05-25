@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { EHttpStatus, HttpError } from "../utils";
+import { DATE_FORMAT, EHttpStatus, HttpError } from "../utils";
 import { Request } from "express";
 import { IQueryCard } from "../models/Card/ICard";
+import { IQueryDeck } from "../models/Deck/IDeck";
+import { formatISO, parse } from "date-fns";
 
 export const sanitizeCardUpdateRequest = (request: Request) => {
     try {
@@ -46,6 +48,22 @@ export const sanitizeCardQueryRequest = (request: Request) => {
         const query: IQueryCard = {
             name,
             toReview,
+        };
+
+        return query;
+    } catch (error) {
+        throw new HttpError(EHttpStatus.BAD_REQUEST, "The query is malformed");
+    }
+};
+
+export const sanitizeDeckQueryRequest = (request: Request) => {
+    try {
+        const name = request.query.name && String(request.query.name);
+        const createdAt = request.query.createdAt && String(request.query.createdAt);
+
+        const query: IQueryDeck = {
+            name,
+            createdAt: createdAt ? formatISO(parse(createdAt, DATE_FORMAT, new Date())) : undefined,
         };
 
         return query;

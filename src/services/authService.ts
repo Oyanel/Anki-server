@@ -1,68 +1,64 @@
 import Token from "../models/authentication/Token";
 import User from "../models/authentication/User";
 import { IToken } from "../models/authentication/Token/IToken";
-import { IUser } from "../models/authentication/User/IUser";
+import { IUserBase, TUserDocument, TUserResponse } from "../models/authentication/User/IUser";
 import { sign, verify } from "jsonwebtoken";
 import "dotenv";
 import { EHttpStatus, HttpError } from "../utils";
-import { compare, hashSync } from "bcrypt";
-import { SALT_ROUND } from "../constant";
+import { compare } from "bcrypt";
 import { addHours, addMinutes } from "date-fns";
+import { LeanDocument } from "mongoose";
 
-const saveToken = async (accessToken: String, refreshToken: String, user: IUser) => {
+const saveToken = async (accessToken: String, refreshToken: String, user: TUserResponse) => {
     const tokenModel: IToken = {
-        user: user.username,
+        user: user.email,
         accessToken: accessToken,
         refreshToken: refreshToken,
         accessTokenExpiresAt: addMinutes(new Date(), 60),
         refreshTokenExpiresAt: addHours(new Date(), 4),
     };
 
-    Token.findOneAndReplace({ user: user.username }, tokenModel, { upsert: true });
+    Token.findOneAndReplace({ user: user.email }, tokenModel, { upsert: true });
 
     return tokenModel;
 };
 
-const generateToken = async (user: IUser) => {
-    delete user.password;
+const generateToken = async (user: TUserResponse) => {
     const accessToken = sign({ user }, process.env.APP_PRIVATE_TOKEN, { expiresIn: "1h" });
     const refreshToken = sign({ user }, process.env.APP_PUBLIC_TOKEN, { expiresIn: "4h" });
 
     return await saveToken(accessToken, refreshToken, user);
 };
 
-export const loginService = async (user: IUser) =>
+export const loginService = async (user: IUserBase) =>
     User.findOne({
-        username: user.username,
+        email: user.email,
     })
         .lean()
         .exec()
-        .then(async (userResponse) => {
-            if (!userResponse) {
-                throw new HttpError(EHttpStatus.UNAUTHORIZED, "Username or password incorrect.");
+        .then(async (userDocument) => {
+            if (!userDocument) {
+                throw new HttpError(EHttpStatus.UNAUTHORIZED, "email or password incorrect.");
             }
-            const isEqual = await compare(user.password, userResponse.password);
+            const isEqual = await compare(user.password, userDocument.password);
             if (!isEqual) {
                 throw new HttpError(EHttpStatus.UNAUTHORIZED, "Password incorrect.");
             }
 
-            return await generateToken(user);
+            return await generateToken(getUserResponse(userDocument));
         });
-
-const isUserExisting = (username: String) => User.countDocuments({ username }).then((count) => count > 0);
-
-export const registerService = async (user: IUser) => {
-    if (await isUserExisting(user.username)) {
-        throw new HttpError(EHttpStatus.INTERNAL_ERROR, "Username already exists");
-    }
-
-    user.password = hashSync(user.password, SALT_ROUND);
-
-    await User.create<IUser>(user);
-};
 
 export const refreshTokenService = async (refreshToken: String) => {
     const tokenContent = verify(refreshToken, process.env.APP_PUBLIC_TOKEN);
 
     return await generateToken(tokenContent.user);
+};
+
+const getUserResponse = (userDocument: TUserDocument | LeanDocument<TUserDocument>) => {
+    const userResponse: TUserResponse = {
+        profile: userDocument.profile,
+        email: userDocument.email,
+    };
+
+    return userResponse;
 };

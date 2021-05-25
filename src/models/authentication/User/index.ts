@@ -1,18 +1,22 @@
-import { Schema, model } from "mongoose";
-import { validateUsername } from "./validate";
+import { Schema, model, Types } from "mongoose";
+import { validateEmail } from "./validate";
 import { TUserDocument } from "./IUser";
 
 const UserSchema = new Schema<TUserDocument>(
     {
-        username: {
+        email: {
             type: String,
             required: true,
             unique: true,
-            validate: { validator: validateUsername, msg: "Invalid username" },
+            validate: { validator: validateEmail, msg: "Invalid email" },
         },
         password: {
             type: String,
             required: true,
+        },
+        profile: {
+            username: String,
+            decks: [Types.ObjectId],
         },
     },
     { timestamps: true }

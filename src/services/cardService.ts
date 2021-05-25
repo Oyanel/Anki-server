@@ -48,7 +48,7 @@ export const deleteCardService = async (id: string) =>
         if (!card) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
         }
-        card.remove();
+        card.deleteOne();
     });
 
 export const reviewCardService = async (id: string, reviewQuality: number) => {

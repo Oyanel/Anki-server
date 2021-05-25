@@ -10,5 +10,5 @@ export const sendError = (res: Response, error: HttpError) => {
 };
 
 export const logError = (error: Error | HttpError) => {
-    logger.error(error);
+    logger.error(error.message);
 };
