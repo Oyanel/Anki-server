@@ -7,6 +7,7 @@ import { EHttpStatus, HttpError } from "../utils";
 import { createCardService } from "./cardService";
 import { FilterQuery, LeanDocument, Types } from "mongoose";
 import { addDeckToProfile, isDeckOwned } from "./userService";
+import { IPagination } from "../api/common/Pagination/IPagination";
 
 export const isDeckExisting = async (condition: FilterQuery<IDeck>) =>
     Deck.countDocuments(condition).then((count) => count > 0);
@@ -99,15 +100,21 @@ export const deleteDeckService = async (userEmail: string, id: string) =>
         deck.deleteOne();
     });
 
-export const searchDecksService = async (userDecks: String[], query: IQueryDeck) =>
+export const searchDecksService = async (userDecks: String[], query: IQueryDeck, pagination: IPagination) =>
     Deck.find({
         _id: { $in: userDecks },
         name: { $regex: new RegExp(query.name ?? "", "i") },
-        createdAt: { $gt: query.from },
+        createdAt: query.from ? { $gt: query.from } : undefined,
     })
+        .skip(pagination.skip)
+        .limit(pagination.limit)
         .lean()
         .exec()
-        .then((decks) => decks.map((deckDocument) => getDeckResponse(deckDocument)));
+        .then((decks) => {
+            console.log(query.from);
+
+            return decks.map((deckDocument) => getDeckResponse(deckDocument));
+        });
 
 const getDeckResponse = (deckDocument: TDeckDocument | LeanDocument<TDeckDocument>) => {
     const deck: IDeckResponse = {

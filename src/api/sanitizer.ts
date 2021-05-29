@@ -39,15 +39,20 @@ export const sanitizeDeckRequest = (nameRequest: any, descriptionRequest: any) =
 export const sanitizeCardQueryRequest = (request: Request) => {
     try {
         const name = request.query.name && String(request.query.name);
-        let toReview;
+        let toReview, reverse;
 
         if (request.query.toReview !== undefined) {
             toReview = request.query.toReview !== "false";
         }
 
+        if (request.query.reverse !== undefined) {
+            reverse = request.query.reverse !== "false";
+        }
+
         const query: IQueryCard = {
             name,
             toReview,
+            reverse,
         };
 
         return query;

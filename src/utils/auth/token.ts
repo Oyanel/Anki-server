@@ -17,9 +17,9 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
     }
 };
 
-export const getCurrentUser = (token: string): TUserResponse => {
+export const getCurrentUser = (authorization: string): TUserResponse => {
     try {
-        return verify(token, process.env.APP_PRIVATE_TOKEN).user;
+        return verify(authorization.split(" ")[1], process.env.APP_PRIVATE_TOKEN).user;
     } catch (error) {
         logError(error);
 

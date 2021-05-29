@@ -7,6 +7,7 @@ import { LeanDocument, Types } from "mongoose";
 import { isCardOwned } from "./deckService";
 import { ICardReview, IReviewResponse, TReviewDocument } from "../models/Review/IReview";
 import { logError } from "../utils/error/error";
+import { IPagination } from "../api/common/Pagination/IPagination";
 
 export const createCardService = async (deckId: String, front: [String], back: [String]) => {
     const newCard: ICard = {
@@ -108,23 +109,31 @@ export const reviewCardService = async (userDecks: String[], id: string, reviewQ
     });
 };
 
-export const searchCardsService = async (userDecks: String[], query: IQueryCard) => {
+export const searchCardsService = async (userDecks: String[], query: IQueryCard, pagination: IPagination) => {
     const nameCondition = { $in: new RegExp(query.name ?? "", "i") };
-    let nextReviewCondition;
+    let nextReviewCondition, reverseCondition;
 
     if (query.toReview !== undefined) {
         nextReviewCondition = query.toReview ? { $lt: new Date() } : { $gt: new Date() };
+    }
+
+    if (query.reverse !== undefined) {
+        // TODO false not working
+        reverseCondition = query.reverse ? { $ne: null } : null;
     }
 
     const conditions = {
         deck: { $in: userDecks },
         $or: [{ front: nameCondition }, { back: nameCondition }],
         nextReview: nextReviewCondition,
+        referenceCard: reverseCondition,
     };
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return Card.find(conditions)
+        .skip(pagination.skip)
+        .limit(pagination.limit)
         .lean()
         .exec()
         .then((cardDocuments) => cardDocuments.map((cardDocument) => getCardResponse(cardDocument)));

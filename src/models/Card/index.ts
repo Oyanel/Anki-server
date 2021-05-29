@@ -16,6 +16,9 @@ const CardSchema = new Schema<TCardDocument>({
         type: [String],
         required: true,
     },
+    referenceCard: {
+        type: Types.ObjectId,
+    },
 });
 
 CardSchema.pre("remove", async function (next) {
