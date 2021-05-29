@@ -6,11 +6,11 @@ import {
     searchCardsService,
     updateCardService,
 } from "../services/cardService";
-import { sendError } from "../utils/error/error";
+import { logError, sendError } from "../utils/error/error";
 import { EHttpStatus, getCurrentUser, HttpError } from "../utils";
 import { isValidObjectId } from "mongoose";
-import { CARD_REVIEW_LEVEL } from "../models/Card/ICard";
 import { sanitizeCardQueryRequest, sanitizeCardUpdateRequest } from "./sanitizer";
+import { CARD_REVIEW_LEVEL } from "../models/Review/IReview";
 
 export const getCard = async (req: Request, res: Response) => {
     const id = req.params.cardId;
@@ -24,6 +24,8 @@ export const getCard = async (req: Request, res: Response) => {
 
         return res.json(card);
     } catch (error) {
+        logError(error);
+
         return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };
@@ -31,10 +33,13 @@ export const getCard = async (req: Request, res: Response) => {
 export const searchCards = async (req: Request, res: Response) => {
     try {
         const query = sanitizeCardQueryRequest(req);
-        const card = await searchCardsService(query);
+        const user = getCurrentUser(req.headers.authorization.split(" ")[1]);
+        const card = await searchCardsService(user.profile.decks, query);
 
         return res.json(card);
     } catch (error) {
+        logError(error);
+
         return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };
@@ -54,6 +59,8 @@ export const updateCard = async (req: Request, res: Response) => {
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {
+        logError(error);
+
         return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };
@@ -70,6 +77,8 @@ export const deleteCard = async (req: Request, res: Response) => {
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {
+        logError(error);
+
         return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };
@@ -89,6 +98,8 @@ export const reviewCard = async (req: Request, res: Response) => {
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {
+        logError(error);
+
         return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };

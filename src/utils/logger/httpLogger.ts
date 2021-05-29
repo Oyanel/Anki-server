@@ -1,4 +1,7 @@
-import winston from "winston";
+import { config, createLogger, format as winstonFormat, transports } from "winston";
+import { format } from "date-fns";
+import { DATE_FORMAT } from "../date/format";
+const { combine, timestamp, prettyPrint, colorize, errors } = winstonFormat;
 
 const options = {
     console: {
@@ -9,13 +12,17 @@ const options = {
     },
 };
 
-export const logger = winston.createLogger({
-    levels: winston.config.npm.levels,
-    format: winston.format.json(),
+export const logger = createLogger({
+    levels: config.npm.levels,
+    format: combine(
+        errors({ stack: true }), // <-- use errors format
+        colorize(),
+        timestamp(),
+        prettyPrint()
+    ),
     transports: [
-        new winston.transports.Console(options.console),
-        new winston.transports.File({
-            filename: "./logs/error.log",
+        new transports.File({
+            filename: `./logs/error_${format(new Date(), DATE_FORMAT)}.log`,
             level: "error",
             handleExceptions: true,
             maxsize: 5242880, //5MB
@@ -24,6 +31,10 @@ export const logger = winston.createLogger({
     ],
     exitOnError: false,
 });
+
+if (process.env.NODE_ENV !== "production") {
+    logger.add(new transports.Console(options.console));
+}
 
 export const loggerConfig = {
     write: (message) => {

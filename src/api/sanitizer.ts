@@ -63,7 +63,7 @@ export const sanitizeDeckQueryRequest = (request: Request) => {
 
         const query: IQueryDeck = {
             name,
-            createdAt: createdAt ? formatISO(parse(createdAt, DATE_FORMAT, new Date())) : undefined,
+            from: createdAt ? formatISO(parse(createdAt, DATE_FORMAT, new Date())) : undefined,
         };
 
         return query;

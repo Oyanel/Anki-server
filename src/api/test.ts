@@ -1,10 +1,9 @@
 import { Request, Response } from "express";
-import { isCardOwned } from "../services/deckService";
-import { getCurrentUser } from "../utils";
+import Review from "../models/Review";
+import { Types } from "mongoose";
 
 export const test = async (req: Request, res: Response) => {
-    const user = getCurrentUser(req.headers.authorization.split(" ")[1]);
-    const rere = await isCardOwned(user.profile.decks, "60ad7231debe910849eda662");
-
+    const rere = await Review.findOne({ card: Types.ObjectId("60b29ca82a1a590105f57c85") }).exec();
+    console.log(rere);
     res.send(rere);
 };

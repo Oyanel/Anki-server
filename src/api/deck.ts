@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { sendError } from "../utils/error/error";
+import { logError, sendError } from "../utils/error/error";
 import { EHttpStatus, getCurrentUser, HttpError } from "../utils";
 import {
     addCardService,
@@ -28,6 +28,8 @@ export const addCard = async (req: Request, res: Response) => {
 
         return res.status(EHttpStatus.CREATED).json(newCard);
     } catch (error) {
+        logError(error);
+
         return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };
@@ -49,6 +51,8 @@ export const createDeck = async (req: Request, res: Response) => {
 
         return res.status(EHttpStatus.CREATED).json(newDeck);
     } catch (error) {
+        logError(error);
+
         return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };
@@ -66,6 +70,8 @@ export const getDeck = async (req: Request, res: Response) => {
 
         return res.json(deck);
     } catch (error) {
+        logError(error);
+
         return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };
@@ -91,6 +97,8 @@ export const updateDeck = async (req: Request, res: Response) => {
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {
+        logError(error);
+
         return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };
@@ -108,6 +116,8 @@ export const deleteDeck = async (req: Request, res: Response) => {
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {
+        logError(error);
+
         return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };
@@ -115,10 +125,13 @@ export const deleteDeck = async (req: Request, res: Response) => {
 export const searchDecks = async (req: Request, res: Response) => {
     try {
         const query = sanitizeDeckQueryRequest(req);
-        const decks = await searchDecksService(query);
+        const user = getCurrentUser(req.headers.authorization.split(" ")[1]);
+        const decks = await searchDecksService(user.profile.decks, query);
 
         return res.json(decks);
     } catch (error) {
+        logError(error);
+
         return sendError(res, error instanceof HttpError ? error : new HttpError());
     }
 };

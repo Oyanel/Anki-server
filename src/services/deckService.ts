@@ -33,7 +33,7 @@ export const addCardService = async (userEmail: string, deckId: string, front: S
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
-    const cards = await createCardService(front, back);
+    const cards = await createCardService(deckId, front, back);
     const cardId = Types.ObjectId(cards[0].id.toString());
     const reversedCardId = Types.ObjectId(cards[1].id.toString());
 
@@ -99,11 +99,12 @@ export const deleteDeckService = async (userEmail: string, id: string) =>
         deck.deleteOne();
     });
 
-export const searchDecksService = async (query: IQueryDeck) =>
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    //TODO only private decks not all
-    Deck.find({ name: { $regex: new RegExp(query.name ?? "", "i") }, createdAt: { $gt: query.createdAt } })
+export const searchDecksService = async (userDecks: String[], query: IQueryDeck) =>
+    Deck.find({
+        _id: { $in: userDecks },
+        name: { $regex: new RegExp(query.name ?? "", "i") },
+        createdAt: { $gt: query.from },
+    })
         .lean()
         .exec()
         .then((decks) => decks.map((deckDocument) => getDeckResponse(deckDocument)));

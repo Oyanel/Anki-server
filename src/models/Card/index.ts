@@ -1,8 +1,13 @@
 import { Schema, model, Types } from "mongoose";
 import { TCardDocument } from "./ICard";
 import Deck from "../Deck";
+import Review from "../Review";
 
 const CardSchema = new Schema<TCardDocument>({
+    deck: {
+        type: Types.ObjectId,
+        required: true,
+    },
     front: {
         type: [String],
         required: true,
@@ -11,31 +16,16 @@ const CardSchema = new Schema<TCardDocument>({
         type: [String],
         required: true,
     },
-    lastReview: {
-        type: Date,
-        required: true,
-    },
-    nextReview: {
-        type: Date,
-        required: true,
-    },
-    referenceCard: {
-        type: Types.ObjectId,
-    },
-    easeFactor: {
-        type: Number,
-        required: true,
-    },
-    views: {
-        type: Number,
-        required: true,
-    },
 });
 
 CardSchema.pre("remove", async function (next) {
-    await Deck.updateOne({ cards: { $in: [this._id] } }, { $pull: { cards: this._id } })
+    const promiseReview = Review.deleteOne({ card: this._id }).lean().exec();
+
+    const promiseDeck = Deck.updateOne({ cards: { $in: [this._id] } }, { $pull: { cards: this._id } })
         .lean()
         .exec();
+
+    await Promise.all([promiseDeck, promiseReview]);
     next();
 });
 

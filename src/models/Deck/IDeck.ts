@@ -12,7 +12,7 @@ export interface IDeckResponse extends IDeck {
 
 export interface IQueryDeck {
     name?: string;
-    createdAt?: string;
+    from?: string;
 }
 
 export type TDeckDocument = IDeck & Document;

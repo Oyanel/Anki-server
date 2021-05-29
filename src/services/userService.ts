@@ -36,6 +36,7 @@ export const addDeckToProfile = async (deckId: string, userEmail: string) =>
         })
         .catch((error) => {
             logError(error);
+
             throw error;
         });
 

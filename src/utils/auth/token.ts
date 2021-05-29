@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { verify } from "jsonwebtoken";
 import { HttpError } from "../error/HttpError";
 import { EHttpStatus } from "../IHttp";
-import { sendError } from "../error/error";
+import { logError, sendError } from "../error/error";
 import { TUserResponse } from "../../models/authentication/User/IUser";
 
 export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
@@ -20,7 +20,9 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
 export const getCurrentUser = (token: string): TUserResponse => {
     try {
         return verify(token, process.env.APP_PRIVATE_TOKEN).user;
-    } catch (e) {
+    } catch (error) {
+        logError(error);
+
         throw new HttpError(EHttpStatus.INTERNAL_ERROR, "The provided token is missing or malformed");
     }
 };

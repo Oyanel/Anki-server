@@ -1,7 +1,7 @@
 import { Types, model, Schema } from "mongoose";
 import { validateName, validateDescription } from "./validate";
 import { TDeckDocument } from "./IDeck";
-import Card from "../Card";
+import Card from "../Review";
 import User from "../authentication/User";
 
 const DeckSchema = new Schema<TDeckDocument>(
