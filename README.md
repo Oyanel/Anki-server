@@ -11,14 +11,13 @@ To run the project locally, you'll need to follow these steps:
 ```shell
 use anki
 ```
+4. Rename your `.env.default` to `.env` and think to change the secret keys with your own
 
-4. Run these commands:
+5. Run these commands:
 
 `git clone <this repo>`
 
 `cd ./anki-server`
-
-Copy/paste the .env (ask maintainer)
 
 `npm install`
 
@@ -36,3 +35,4 @@ You'll need to follow these steps:
 
 1. have a `DB_DATA PATH` environment variable set if you want to persist database data in a volume
 2. run `docker-compose up -d`
+3. Rename your `.env.default` to `.env` and think to change the secret keys with your own 
