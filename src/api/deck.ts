@@ -22,10 +22,10 @@ export const addCard = async (req: Request, res: Response) => {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Deck id invalid"));
         }
 
-        const { front, back } = sanitizeCardUpdateRequest(req);
+        const { front, back, reverseCard } = sanitizeCardUpdateRequest(req);
 
         const user = getCurrentUser(req.headers.authorization);
-        const newCard = await addCardService(user.email.valueOf(), id, front, back);
+        const newCard = await addCardService(user.email.valueOf(), id, front, back, reverseCard);
 
         return res.status(EHttpStatus.CREATED).json(newCard);
     } catch (error) {

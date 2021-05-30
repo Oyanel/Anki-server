@@ -9,16 +9,19 @@ export const sanitizeCardUpdateRequest = (request: Request) => {
     try {
         const frontRequest = request.body.front;
         const backRequest = request.body.back;
+        const reverseCardRequest = request.body.reverseCard;
 
         const front = frontRequest.map((frontItem) => String(frontItem));
         const back = backRequest.map((backItem) => String(backItem));
+        const reverseCard = Boolean(reverseCardRequest);
 
         return {
             front,
             back,
+            reverseCard,
         };
     } catch (error) {
-        throw new HttpError(EHttpStatus.BAD_REQUEST, "The front/back fields are not string arrays");
+        throw new HttpError(EHttpStatus.BAD_REQUEST, "Bad request");
     }
 };
 

@@ -25,7 +25,13 @@ export const isCardOwned = async (userDecks: String[], cardId: string) => {
         .then((count) => count > 0);
 };
 
-export const addCardService = async (userEmail: string, deckId: string, front: String[], back: String[]) => {
+export const addCardService = async (
+    userEmail: string,
+    deckId: string,
+    front: String[],
+    back: String[],
+    reverseCard: boolean | undefined
+) => {
     if (!(await isDeckExisting({ _id: Types.ObjectId(deckId) }))) {
         throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
     }
@@ -34,15 +40,17 @@ export const addCardService = async (userEmail: string, deckId: string, front: S
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
-    const cards = await createCardService(deckId, front, back);
+    const cards = await createCardService(deckId, front, back, reverseCard);
     const cardId = Types.ObjectId(cards[0].id.toString());
-    const reversedCardId = Types.ObjectId(cards[1].id.toString());
+    const reversedCardId = cards[1] ? Types.ObjectId(cards[1].id.toString()) : undefined;
 
     await Deck.findOne({ _id: Types.ObjectId(deckId) })
         .exec()
         .then((deck) => {
             deck.cards.push(cardId);
-            deck.cards.push(reversedCardId);
+            if (reverseCard) {
+                deck.cards.push(reversedCardId);
+            }
             deck.save();
         });
 

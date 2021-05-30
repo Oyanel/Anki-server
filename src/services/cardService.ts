@@ -9,34 +9,43 @@ import { ICardReview, IReviewResponse, TReviewDocument } from "../models/Review/
 import { logError } from "../utils/error/error";
 import { IPagination } from "../api/common/Pagination/IPagination";
 
-export const createCardService = async (deckId: String, front: [String], back: [String]) => {
+export const createCardService = async (deckId: String, front: [String], back: [String], hasReversedCard: boolean) => {
     const newCard: ICard = {
         deck: deckId,
         back,
         front,
     };
+    const promises = [];
+    const cards = [];
 
-    return Card.create<ICard>(newCard).then(async (cardDocument) => {
-        const promiseReview = createReview(cardDocument._id);
-        const reversedCard = getNewReversedCard(cardDocument);
+    try {
+        const cardDocument = await Card.create<ICard>(newCard);
+        const promiseReview = createReview(cardDocument._id).catch((error) => {
+            cardDocument.deleteOne();
+            throw error;
+        });
 
-        const promiseCard = Card.create<ICard>(reversedCard)
-            .then(async (reversedCardDocument) => {
-                await createReview(cardDocument._id);
+        promises.push(promiseReview);
+        cards.push(getCardResponse(cardDocument));
 
-                return [getCardResponse(cardDocument), getCardResponse(reversedCardDocument)];
-            })
-            .catch((error) => {
-                cardDocument.delete();
-                logError(error);
-
+        if (hasReversedCard) {
+            const reversedCard = getNewReversedCard(cardDocument);
+            const reversedCardDocument = await Card.create<ICard>(reversedCard);
+            const promiseReversedReview = createReview(reversedCardDocument._id).catch((error) => {
+                reversedCardDocument.deleteOne();
                 throw error;
             });
+            cards.push(getCardResponse(reversedCardDocument));
+            promises.push(promiseReversedReview);
+        }
 
-        await Promise.all([promiseCard, promiseReview]);
+        await Promise.all(promises);
 
-        return promiseCard;
-    });
+        return cards;
+    } catch (error) {
+        logError(error);
+        throw error;
+    }
 };
 
 export const getCardService = async (id: string) =>

@@ -10,9 +10,6 @@ const ReviewSchema = new Schema<TReviewDocument>({
         type: Date,
         required: true,
     },
-    referenceCard: {
-        type: Types.ObjectId,
-    },
     easeFactor: {
         type: Number,
         required: true,
@@ -23,6 +20,8 @@ const ReviewSchema = new Schema<TReviewDocument>({
     },
     card: {
         type: Types.ObjectId,
+        required: true,
+        unique: true,
     },
 });
 
