@@ -1,17 +1,12 @@
 import { Request, Response } from "express";
-import {
-    deleteCardService,
-    getCardService,
-    reviewCardService,
-    searchCardsService,
-    updateCardService,
-} from "../services/cardService";
+import { deleteCardService, getCardService, searchCardsService, updateCardService } from "../services/cardService";
 import { logError, sendError } from "../utils/error/error";
 import { EHttpStatus, getCurrentUser, HttpError } from "../utils";
 import { isValidObjectId } from "mongoose";
 import { sanitizeCardQueryRequest, sanitizeCardUpdateRequest } from "./sanitizer";
 import { CARD_REVIEW_LEVEL } from "../models/Review/IReview";
 import { getPagination } from "./common/Pagination/pagination";
+import { createReviewService, removeReviewsService, reviewCardService } from "../services/reviewService";
 
 export const getCard = async (req: Request, res: Response) => {
     const id = req.params.cardId;
@@ -97,7 +92,45 @@ export const reviewCard = async (req: Request, res: Response) => {
         }
 
         const user = getCurrentUser(req.headers.authorization);
-        await reviewCardService(user.profile.decks, id, reviewLevel);
+        await reviewCardService(user, id, reviewLevel);
+
+        return res.sendStatus(EHttpStatus.NO_CONTENT);
+    } catch (error) {
+        logError(error);
+
+        return sendError(res, error instanceof HttpError ? error : new HttpError());
+    }
+};
+
+export const createReviewCard = async (req: Request, res: Response) => {
+    const id = req.params.cardId;
+
+    try {
+        if (!isValidObjectId(id)) {
+            return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request"));
+        }
+
+        const user = getCurrentUser(req.headers.authorization);
+        await createReviewService(user, id);
+
+        return res.sendStatus(EHttpStatus.NO_CONTENT);
+    } catch (error) {
+        logError(error);
+
+        return sendError(res, error instanceof HttpError ? error : new HttpError());
+    }
+};
+
+export const unreviewCard = async (req: Request, res: Response) => {
+    const id = req.params.cardId;
+
+    try {
+        if (!isValidObjectId(id)) {
+            return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request"));
+        }
+
+        const user = getCurrentUser(req.headers.authorization);
+        await removeReviewsService(user, id);
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {

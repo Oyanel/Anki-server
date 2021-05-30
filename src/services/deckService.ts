@@ -1,26 +1,44 @@
 import { IDeck, IDeckResponse, IQueryDeck, TDeckDocument } from "../models/Deck/IDeck";
 import Deck from "../models/Deck";
 import { EHttpStatus, HttpError } from "../utils";
-import { createCardService } from "./cardService";
+import { createCardService, removeReviewsService } from "./cardService";
 import { FilterQuery, LeanDocument, Types } from "mongoose";
-import { addDeckToProfile, isDeckAccessible, isDeckOwned } from "./userService";
+import { addDeckToProfile, isDeckOwned } from "./userService";
 import { IPagination } from "../api/common/Pagination/IPagination";
+import { TUserResponse } from "../models/authentication/User/IUser";
 
 export const isDeckExisting = async (condition: FilterQuery<IDeck>) =>
     Deck.countDocuments(condition).then((count) => count > 0);
 
-export const isCardOwned = async (userDecks: String[], cardId: string) => {
-    const condition = { _id: { $in: userDecks }, cards: { $in: Types.ObjectId(cardId) } };
+export const isDeckAccessible = async (userDecks: String[], cardId: string) => {
+    const isOwnedCondition = { _id: { $in: userDecks }, cards: { $in: Types.ObjectId(cardId) } };
+    const isPublicCondition = { private: false };
+    const orCondition = { $or: [isOwnedCondition, isPublicCondition] };
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return await Deck.countDocuments(condition)
+    return await Deck.countDocuments(orCondition)
+        .exec()
+        .then((count) => count > 0);
+};
+
+export const isCardOwned = async (userDecks: String[], cardId: string, usePublicCards?: boolean) => {
+    const orConditions = [];
+    orConditions.push({ _id: { $in: userDecks }, cards: { $in: Types.ObjectId(cardId) } });
+
+    if (usePublicCards) {
+        orConditions.push({ private: false });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return await Deck.countDocuments({ $or: orConditions })
         .exec()
         .then((count) => count > 0);
 };
 
 export const addCardService = async (
-    userEmail: string,
+    user: TUserResponse,
     deckId: string,
     front: String[],
     back: String[],
@@ -30,11 +48,11 @@ export const addCardService = async (
         throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
     }
 
-    if (!(await isDeckOwned(userEmail, deckId))) {
+    if (!(await isDeckOwned(user.email.valueOf(), deckId))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
-    const cards = await createCardService(deckId, front, back, reverseCard);
+    const cards = await createCardService(user, deckId, front, back, reverseCard);
     const cardId = cards[0].id;
 
     await Deck.findOne({ _id: Types.ObjectId(deckId) })
@@ -79,16 +97,37 @@ export const getDeckService = async (userDecks: String[], id: string) => {
     });
 };
 
-export const updateDeckService = async (userEmail: string, id: string, name: string, description: string) => {
-    if (!(await isDeckOwned(userEmail, id))) {
+export const updateDeckService = async (
+    user: TUserResponse,
+    id: string,
+    name: string,
+    description: string,
+    isPrivate: boolean
+) => {
+    const promises = [];
+    if (!(await isDeckOwned(user.email.valueOf(), id))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
-    Deck.updateOne({ _id: Types.ObjectId(id) }, { name, description }).then((response) => {
-        if (response.nModified === 0) {
-            throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
-        }
-    });
+    if (isPrivate) {
+        promises.push(removeReviewsService(user, id));
+    }
+
+    const updateDeckPromise = Deck.findById(Types.ObjectId(id))
+        .exec()
+        .then(async (deckDocument) => {
+            if (!deckDocument) {
+                throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
+            }
+            deckDocument.name = name;
+            deckDocument.description = description;
+            deckDocument.private = isPrivate;
+            await deckDocument.save();
+        });
+
+    promises.push(updateDeckPromise);
+
+    await Promise.all(promises);
 };
 
 export const deleteDeckService = async (userEmail: string, id: string) =>

@@ -2,7 +2,7 @@ import { Application, Router } from "express";
 import { EHttpStatus, HttpError, verifyToken } from "../utils";
 import { login, refreshToken, register } from "./auth";
 import { sendError } from "../utils/error/error";
-import { deleteCard, getCard, reviewCard, searchCards, updateCard } from "./card";
+import { createReviewCard, deleteCard, getCard, reviewCard, searchCards, unreviewCard, updateCard } from "./card";
 import { addCard, createDeck, deleteDeck, getDeck, searchDecks, updateDeck } from "./deck";
 import { test } from "./test";
 
@@ -22,6 +22,8 @@ export const routes = (app: Application) => {
     privateRouter.get("/cards/search", searchCards);
     privateRouter.get("/cards/:cardId", getCard);
     privateRouter.put("/cards/:cardId", updateCard);
+    privateRouter.post("/cards/:cardId/join", createReviewCard);
+    privateRouter.delete("/cards/:cardId/unreview", unreviewCard);
     privateRouter.post("/cards/:cardId/review", reviewCard);
     privateRouter.delete("/cards/:cardId", deleteCard);
 

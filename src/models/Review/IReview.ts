@@ -3,6 +3,7 @@ import { ICardResponse } from "../Card/ICard";
 
 export interface IReview {
     card: Types.ObjectId;
+    user: String;
     lastReview: Date;
     nextReview: Date;
     easeFactor: Number;

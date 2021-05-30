@@ -1,5 +1,6 @@
 import { Schema, model, Types } from "mongoose";
 import { TReviewDocument } from "./IReview";
+import { validateEmail } from "../authentication/User/validate";
 
 const ReviewSchema = new Schema<TReviewDocument>({
     lastReview: {
@@ -21,7 +22,11 @@ const ReviewSchema = new Schema<TReviewDocument>({
     card: {
         type: Types.ObjectId,
         required: true,
-        unique: true,
+    },
+    user: {
+        type: String,
+        required: true,
+        validate: { validator: validateEmail, msg: "Invalid email" },
     },
 });
 

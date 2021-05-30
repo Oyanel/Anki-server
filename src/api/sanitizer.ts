@@ -34,9 +34,11 @@ export const sanitizeDeckRequest = (request: Request) => {
         const name = nameRequest && String(nameRequest);
         const description = descriptionRequest && String(descriptionRequest);
 
-        if (request.query.private !== undefined) {
-            isPrivate = request.query.private !== "false";
+        if (request.body.private !== undefined) {
+            isPrivate = Boolean(request.body.private);
         }
+        console.log(request.body.private);
+        console.log(isPrivate);
 
         return {
             name,
@@ -54,11 +56,11 @@ export const sanitizeCardQueryRequest = (request: Request) => {
         let toReview, reverse;
 
         if (request.query.toReview !== undefined) {
-            toReview = request.query.toReview !== "false";
+            toReview = Boolean(request.query.toReview);
         }
 
         if (request.query.reverse !== undefined) {
-            reverse = request.query.reverse !== "false";
+            reverse = Boolean(request.query.reverse);
         }
 
         const query: IQueryCard = {

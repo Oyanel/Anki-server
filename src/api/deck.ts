@@ -25,7 +25,7 @@ export const addCard = async (req: Request, res: Response) => {
         const { front, back, reverseCard } = sanitizeCardUpdateRequest(req);
 
         const user = getCurrentUser(req.headers.authorization);
-        const newCard = await addCardService(user.email.valueOf(), id, front, back, reverseCard);
+        const newCard = await addCardService(user, id, front, back, reverseCard);
 
         return res.status(EHttpStatus.CREATED).json(newCard);
     } catch (error) {
@@ -78,7 +78,7 @@ export const updateDeck = async (req: Request, res: Response) => {
     try {
         const id = req.params.deckId;
 
-        const { name, description } = sanitizeDeckRequest(req);
+        const { name, description, isPrivate } = sanitizeDeckRequest(req);
 
         if (!isValidObjectId(id)) {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Deck id invalid"));
@@ -89,7 +89,7 @@ export const updateDeck = async (req: Request, res: Response) => {
         }
 
         const user = getCurrentUser(req.headers.authorization);
-        await updateDeckService(user.email.valueOf(), id, name, description);
+        await updateDeckService(user, id, name, description, isPrivate);
 
         return res.sendStatus(EHttpStatus.NO_CONTENT);
     } catch (error) {

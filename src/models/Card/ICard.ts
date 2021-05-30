@@ -17,6 +17,5 @@ export type TCardDocument = ICard & Document;
 export interface IQueryCard {
     name?: string;
     toReview?: boolean;
-    decks?: string[];
     reverse?: boolean;
 }
