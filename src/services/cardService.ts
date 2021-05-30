@@ -9,7 +9,7 @@ import { ICardReview, IReviewResponse, TReviewDocument } from "../models/Review/
 import { logError } from "../utils/error/error";
 import { IPagination } from "../api/common/Pagination/IPagination";
 
-export const createCardService = async (deckId: String, front: [String], back: [String], hasReversedCard: boolean) => {
+export const createCardService = async (deckId: String, front: String[], back: String[], hasReversedCard: boolean) => {
     const newCard: ICard = {
         deck: deckId,
         back,
@@ -48,7 +48,11 @@ export const createCardService = async (deckId: String, front: [String], back: [
     }
 };
 
-export const getCardService = async (id: string) =>
+export const getCardService = async (userDecks: String[], id: string) => {
+    if (!(await isCardOwned(userDecks, id))) {
+        throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
+    }
+
     Card.findById(Types.ObjectId(id)).then((cardDocument) => {
         if (!cardDocument) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
@@ -56,6 +60,7 @@ export const getCardService = async (id: string) =>
 
         return getCardResponse(cardDocument);
     });
+};
 
 export const updateCardService = async (userDecks: String[], id: string, front: String[], back: String[]) => {
     if (!(await isCardOwned(userDecks, id))) {
@@ -127,8 +132,7 @@ export const searchCardsService = async (userDecks: String[], query: IQueryCard,
     }
 
     if (query.reverse !== undefined) {
-        // TODO false not working
-        reverseCondition = query.reverse ? { $ne: null } : null;
+        reverseCondition = { $exists: query.reverse };
     }
 
     const conditions = {

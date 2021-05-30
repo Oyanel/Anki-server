@@ -17,6 +17,11 @@ const DeckSchema = new Schema<TDeckDocument>(
         },
         cards: {
             type: [Types.ObjectId],
+            required: true,
+        },
+        private: {
+            type: Boolean,
+            required: true,
         },
     },
     { timestamps: true }

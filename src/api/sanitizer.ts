@@ -25,14 +25,23 @@ export const sanitizeCardUpdateRequest = (request: Request) => {
     }
 };
 
-export const sanitizeDeckRequest = (nameRequest: any, descriptionRequest: any) => {
+export const sanitizeDeckRequest = (request: Request) => {
     try {
-        const name = String(nameRequest);
-        const description = String(descriptionRequest);
+        let isPrivate;
+        const nameRequest = request.body.name;
+        const descriptionRequest = request.body.description;
+
+        const name = nameRequest && String(nameRequest);
+        const description = descriptionRequest && String(descriptionRequest);
+
+        if (request.query.private !== undefined) {
+            isPrivate = request.query.private !== "false";
+        }
 
         return {
             name,
             description,
+            isPrivate,
         };
     } catch (error) {
         throw new HttpError(EHttpStatus.BAD_REQUEST, "The name/description fields are not strings");

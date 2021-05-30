@@ -36,19 +36,16 @@ export const addCard = async (req: Request, res: Response) => {
 };
 
 export const createDeck = async (req: Request, res: Response) => {
-    const nameRequest = req.body.name;
-    const descriptionRequest = req.body.description;
-
-    const { name, description } = sanitizeDeckRequest(nameRequest, descriptionRequest);
-
     try {
+        const { name, description, isPrivate } = sanitizeDeckRequest(req);
+
         if (!validateName(name) || !validateDescription(description)) {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Deck invalid"));
         }
 
         const user = getCurrentUser(req.headers.authorization);
 
-        const newDeck = await createDeckService(user.email.valueOf(), name, description);
+        const newDeck = await createDeckService(user.email.valueOf(), name, description, isPrivate);
 
         return res.status(EHttpStatus.CREATED).json(newDeck);
     } catch (error) {
@@ -67,7 +64,7 @@ export const getDeck = async (req: Request, res: Response) => {
         }
 
         const user = getCurrentUser(req.headers.authorization);
-        const deck = await getDeckService(user.email.valueOf(), id);
+        const deck = await getDeckService(user.profile.decks, id);
 
         return res.json(deck);
     } catch (error) {
@@ -80,10 +77,8 @@ export const getDeck = async (req: Request, res: Response) => {
 export const updateDeck = async (req: Request, res: Response) => {
     try {
         const id = req.params.deckId;
-        const nameRequest = req.body.name;
-        const descriptionRequest = req.body.description;
 
-        const { name, description } = sanitizeDeckRequest(nameRequest, descriptionRequest);
+        const { name, description } = sanitizeDeckRequest(req);
 
         if (!isValidObjectId(id)) {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Deck id invalid"));

@@ -21,7 +21,8 @@ export const getCard = async (req: Request, res: Response) => {
             return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request"));
         }
 
-        const card = await getCardService(id);
+        const user = getCurrentUser(req.headers.authorization);
+        const card = await getCardService(user.profile.decks, id);
 
         return res.json(card);
     } catch (error) {

@@ -15,7 +15,5 @@ export const getPagination = (req: Request) => {
         limit: pageSize,
     };
 
-    console.log(pagination);
-
     return pagination;
 };
