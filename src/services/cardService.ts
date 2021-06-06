@@ -58,7 +58,7 @@ export const getCardService = async (userDecks: String[], id: string) => {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
-    Card.findById(Types.ObjectId(id)).then((cardDocument) => {
+    return Card.findById(Types.ObjectId(id)).then((cardDocument) => {
         if (!cardDocument) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
         }
@@ -143,7 +143,7 @@ const getCardResponse = (cardDocument: TCardDocument | LeanDocument<TCardDocumen
         deck: cardDocument.deck,
         back: cardDocument.back as String[],
         front: cardDocument.front as String[],
-        isReversed: !!cardDocument.referenceCard,
+        isReversed: Boolean(cardDocument.referenceCard),
     };
 
     return card;
