@@ -1,4 +1,4 @@
-import { IDeck, IDeckResponse, IQueryDeck, TDeckDocument } from "../models/Deck/IDeck";
+import { ICreateDeck, IDeck, IDeckResponse, IQueryDeck, TDeckDocument } from "../models/Deck/IDeck";
 import Deck from "../models/Deck";
 import { EHttpStatus, HttpError } from "../utils";
 import { createCardService } from "./cardService";
@@ -7,6 +7,7 @@ import { addDeckToProfile, isDeckOwned } from "./userService";
 import { IPagination } from "../api/common/Pagination/IPagination";
 import { TUserResponse } from "../models/authentication/User/IUser";
 import { removeReviewsService } from "./reviewService";
+import { ICreateCard } from "../models/Card/ICard";
 
 export const isDeckExisting = async (condition: FilterQuery<IDeck>) =>
     Deck.countDocuments(condition).then((count) => count > 0);
@@ -38,13 +39,8 @@ export const isCardOwned = async (userDecks: String[], cardId: string, usePublic
         .then((count) => count > 0);
 };
 
-export const addCardService = async (
-    user: TUserResponse,
-    deckId: string,
-    front: String[],
-    back: String[],
-    reverseCard: boolean | undefined
-) => {
+export const addCardService = async (user: TUserResponse, deckId: string, card: ICreateCard) => {
+    const { front, back, example, reverseCard } = card;
     if (!(await isDeckExisting({ _id: Types.ObjectId(deckId) }))) {
         throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
     }
@@ -53,7 +49,7 @@ export const addCardService = async (
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
-    const cards = await createCardService(user, deckId, front, back, reverseCard);
+    const cards = await createCardService(user, deckId, front, back, example, reverseCard);
     const cardId = cards[0].id;
 
     await Deck.findOne({ _id: Types.ObjectId(deckId) })
@@ -69,12 +65,13 @@ export const addCardService = async (
     return cards;
 };
 
-export const createDeckService = async (userEmail: string, name: string, description: string, isPrivate: boolean) => {
+export const createDeckService = async (userEmail: string, deckQuery: ICreateDeck) => {
+    const { isPrivate, name, description } = deckQuery;
     const newDeck: IDeck = {
         name,
         description,
         cards: [],
-        private: isPrivate ?? true,
+        isPrivate: isPrivate ?? true,
     };
 
     const deck = await Deck.create<IDeck>(newDeck).then((deckDocument) => getDeckResponse(deckDocument));
@@ -122,7 +119,7 @@ export const updateDeckService = async (
             }
             deckDocument.name = name;
             deckDocument.description = description;
-            deckDocument.private = isPrivate;
+            deckDocument.isPrivate = isPrivate;
             await deckDocument.save();
         });
 
@@ -144,11 +141,13 @@ export const deleteDeckService = async (userEmail: string, id: string) =>
 
 export const searchDecksService = async (userDecks: String[], query: IQueryDeck, pagination: IPagination) => {
     const isPrivateDeckCondition = { _id: { $in: userDecks } };
-    const isDeckPublicCondition = { private: false };
+    const { isPrivate, name, from } = query;
+    const isDeckPublicCondition = { isPrivate: false };
     const condition = {
         $or: [isPrivateDeckCondition, isDeckPublicCondition],
-        name: { $regex: new RegExp(query.name ?? "", "i") },
-        createdAt: query.from ? { $gt: query.from } : undefined,
+        name: { $regex: new RegExp(name ?? "", "i") },
+        createdAt: from ? { $gt: from } : undefined,
+        isPrivate,
     };
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -169,7 +168,7 @@ const getDeckResponse = (deckDocument: TDeckDocument | LeanDocument<TDeckDocumen
         name: deckDocument.name,
         description: deckDocument.description,
         cards: deckDocument.cards as String[],
-        private: deckDocument.private,
+        isPrivate: deckDocument.isPrivate,
     };
 
     return deck;

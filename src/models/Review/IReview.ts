@@ -6,18 +6,18 @@ export interface IReview {
     user: String;
     lastReview: Date;
     nextReview: Date;
-    easeFactor: Number;
-    views: Number;
+    easeFactor: number;
+    views: number;
 }
 
-export type IReviewResponse = Omit<IReview, "card"> & ICardResponse;
+export type TReviewResponse = Omit<IReview, "card"> & ICardResponse;
 
 export type TReviewDocument = IReview & Document;
 
 export interface ICardReview {
     nextReview: Date;
-    easeFactor: Number;
-    views: Number;
+    easeFactor: number;
+    views: number;
 }
 
 export const CARD_REVIEW_LEVEL = {
@@ -28,3 +28,20 @@ export const CARD_REVIEW_LEVEL = {
     MEDIUM: 4,
     EASY: 5,
 };
+
+/**
+ * @enum {
+ *     "BLACKOUT",
+ *     "FAILED",
+ *     "CLOSE",
+ *     "HARD",
+ *     "MEDIUM",
+ *     "EASY"
+ *  }
+ * @example {
+ *     "reviewLevel": "EASY"
+ * }
+ */
+export interface IReviewLevel {
+    reviewLevel: string;
+}

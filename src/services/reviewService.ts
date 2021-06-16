@@ -5,7 +5,7 @@ import Review from "../models/Review";
 import { EHttpStatus, HttpError } from "../utils";
 import { LeanDocument, Types } from "mongoose";
 import { isCardOwned } from "./deckService";
-import { ICardReview, IReviewResponse, TReviewDocument } from "../models/Review/IReview";
+import { ICardReview, TReviewResponse, TReviewDocument } from "../models/Review/IReview";
 import { TUserResponse } from "../models/authentication/User/IUser";
 
 export const isCardReviewed = (userEmail: string, cardId: string) =>
@@ -56,7 +56,7 @@ export const reviewCardService = async (user: TUserResponse, id: string, reviewQ
             throw new HttpError(EHttpStatus.NOT_FOUND, "Review not found for this card");
         }
 
-        const newCardReview = getNextReview(reviewQuality.valueOf(), review);
+        const newCardReview = getNextReview(reviewQuality, review);
         review.nextReview = newCardReview.nextReview;
         review.lastReview = new Date();
         review.views = newCardReview.views;
@@ -101,7 +101,7 @@ const getNextReview = (quality: number, review: TReviewDocument) => {
     const newCardReview: ICardReview = {
         easeFactor: review.easeFactor,
         nextReview: review.nextReview,
-        views: review.views.valueOf() + 1,
+        views: review.views + 1,
     };
 
     if (quality < 0 || quality > 5) {
@@ -151,12 +151,13 @@ const getCardReviewResponse = (
     cardDocument: TCardDocument | LeanDocument<TCardDocument>,
     review: TReviewDocument | LeanDocument<TReviewDocument>
 ) => {
-    const cardReview: IReviewResponse = {
+    const cardReview: TReviewResponse = {
         id: cardDocument._id,
         user: review.user,
         deck: cardDocument.deck,
         back: cardDocument.back as String[],
         front: cardDocument.front as String[],
+        example: cardDocument.example,
         isReversed: !!cardDocument.referenceCard,
         easeFactor: review.easeFactor,
         lastReview: review.lastReview,

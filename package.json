@@ -5,24 +5,28 @@
   "main": "dist/app.js",
   "scripts": {
     "start": "tsc && node dist/app.js",
-    "start:dev": "nodemon -L --watch src/ -e ts index.js",
+    "start:dev": "tsoa spec-and-routes && nodemon -L --watch src/ --watch build/ -e ts index.js",
     "lint": "eslint --ext .ts,.tsx src/**/*.ts",
-    "compile": "tsc --noEmit"
+    "compile": "tsc --noEmit",
+    "doc": "tsoa spec-and-routes"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@babel/preset-typescript": "^7.13.0",
     "@babel/core": "^7.13.15",
     "@babel/node": "^7.13.13",
+    "@babel/plugin-proposal-decorators": "^7.14.5",
     "@babel/plugin-transform-runtime": "^7.13.15",
     "@babel/preset-env": "^7.13.15",
+    "@babel/preset-typescript": "^7.13.0",
     "@babel/register": "^7.13.14",
     "@types/express": "^4.17.11",
     "@types/mongoose": "^5.10.5",
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^4.22.0",
+    "@vjpr/babel-plugin-parameter-decorator": "^1.0.15",
+    "babel-plugin-transform-class-properties": "^6.24.1",
     "cors": "^2.8.5",
     "eslint": "^7.24.0",
     "eslint-config-prettier": "^8.2.0",
@@ -43,6 +47,8 @@
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.12.4",
     "morgan": "^1.10.0",
+    "swagger-ui-express": "^4.1.6",
+    "tsoa": "^3.8.0",
     "validator": "^13.5.2",
     "winston": "^3.3.3"
   }

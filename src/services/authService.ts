@@ -18,7 +18,7 @@ const saveToken = async (accessToken: String, refreshToken: String, user: TUserR
         refreshTokenExpiresAt: addHours(new Date(), 4),
     };
 
-    Token.findOneAndReplace({ user: user.email }, tokenModel, { upsert: true });
+    await Token.findOneAndReplace({ user: user.email }, tokenModel, { upsert: true }).lean().exec();
 
     return tokenModel;
 };

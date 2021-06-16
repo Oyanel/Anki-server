@@ -5,11 +5,24 @@ export interface IProfile {
     decks: String[];
 }
 
+/**
+ * @example {
+ *  "email": "user.test@test.com",
+ *  "password": "LfasefSLEFs2d*"
+ * }
+ */
 export interface IUserBase {
     email: String;
     password: String;
 }
 
+/**
+ * @example {
+ *  "email": "user.test@test.com",
+ *  "password": "LfasefSLEFs2d*"
+ *  "username": "Johnny"
+ * }
+ */
 export interface IUserRegistration extends IUserBase {
     username: String;
 }
