@@ -4,7 +4,7 @@
   "description": "Anki node server",
   "main": "dist/app.js",
   "scripts": {
-    "start": "tsc && node dist/app.js",
+    "start": "tsoa spec-and-routes && tsc && node dist/app.js",
     "start:dev": "tsoa spec-and-routes && nodemon -L --watch src/ --watch build/ -e ts index.js",
     "lint": "eslint --ext .ts,.tsx src/**/*.ts",
     "compile": "tsc --noEmit",
