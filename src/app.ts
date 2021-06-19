@@ -1,7 +1,7 @@
 import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
 import loaders from "./loaders";
-import { RegisterRoutes } from "../build/routes";
+import { RegisterRoutes } from "./routes";
 import { EHttpStatus, HttpError } from "./utils";
 import { sendError } from "./utils/error/error";
 import { ValidateError } from "tsoa";

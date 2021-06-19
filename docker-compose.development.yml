@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+    api:
+        volumes:
+            - ./:/usr/src/app
+            - /usr/src/app/node_modules
+        restart: unless-stopped
+        build:
+            target: development
+        environment:
+            DATABASE_NAME: ${DATABASE_NAME_DEV}
+            MONGO_USER: ${MONGO_USER_DEV}
+            MONGO_PWD: ${MONGO_PWD_DEV}
+
+    mongo:
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: root
+            MONGO_INITDB_ROOT_PASSWORD: root
+
+    mongo-express:
+        container_name: mongo-express
+        image: mongo-express
+        depends_on:
+            - mongo
+        ports:
+            - 8081:8081
+        restart: unless-stopped
+        environment:
+            ME_CONFIG_MONGODB_ADMINUSERNAME: root
+            ME_CONFIG_MONGODB_ADMINPASSWORD: root

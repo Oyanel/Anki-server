@@ -24,7 +24,7 @@ export interface IUserBase {
  * }
  */
 export interface IUserRegistration extends IUserBase {
-    username: String;
+    username: string;
 }
 
 export interface IUser extends IUserBase {

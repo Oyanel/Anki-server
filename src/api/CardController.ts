@@ -29,26 +29,7 @@ import { createReviewService, removeReviewsService, reviewCardService } from "..
 @Response<HttpError>(EHttpStatus.BAD_REQUEST)
 @Response<HttpError>(EHttpStatus.INTERNAL_ERROR)
 export class CardController extends Controller {
-    @Get("{cardId}")
-    @Response<HttpError>(EHttpStatus.NOT_FOUND)
-    public async getCard(cardId: string, @Request() request: express.Request): Promise<ICardResponse> {
-        console.log("Hello !");
-        if (!isValidObjectId(cardId)) {
-            throw new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request");
-        }
-
-        try {
-            const user = getCurrentUser(request.headers.authorization);
-
-            return await getCardService(user.profile.decks, cardId);
-        } catch (error) {
-            logError(error);
-
-            throw error instanceof HttpError ? error : new HttpError();
-        }
-    }
-
-    @Get("search")
+    @Get()
     public async searchCards(
         @Request() request: express.Request,
         @Query() skip?: number,
@@ -58,6 +39,7 @@ export class CardController extends Controller {
         @Query() name?: string
     ): Promise<ICardResponse[]> {
         try {
+            console.log("test");
             const user = getCurrentUser(request.headers.authorization);
             const paginatedCardQuery: IPaginatedQuery<IQueryCard> = {
                 skip: skip ?? 0,
@@ -68,6 +50,24 @@ export class CardController extends Controller {
             };
 
             return await searchCardsService(user.profile.decks, paginatedCardQuery);
+        } catch (error) {
+            logError(error);
+
+            throw error instanceof HttpError ? error : new HttpError();
+        }
+    }
+
+    @Get("{cardId}")
+    @Response<HttpError>(EHttpStatus.NOT_FOUND)
+    public async getCard(cardId: string, @Request() request: express.Request): Promise<ICardResponse> {
+        if (!isValidObjectId(cardId)) {
+            throw new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request");
+        }
+
+        try {
+            const user = getCurrentUser(request.headers.authorization);
+
+            return await getCardService(user.profile.decks, cardId);
         } catch (error) {
             logError(error);
 
@@ -93,8 +93,9 @@ export class CardController extends Controller {
         try {
             const user = getCurrentUser(request.headers.authorization);
             await updateCardService(user.profile.decks, cardId, front, back, example);
-
             this.setStatus(EHttpStatus.NO_CONTENT);
+
+            return;
         } catch (error) {
             logError(error);
 
@@ -115,6 +116,8 @@ export class CardController extends Controller {
             const user = getCurrentUser(request.headers.authorization);
             await deleteCardService(user.profile.decks, cardId);
             this.setStatus(EHttpStatus.NO_CONTENT);
+
+            return;
         } catch (error) {
             logError(error);
 
@@ -160,6 +163,8 @@ export class CardController extends Controller {
             const user = getCurrentUser(request.headers.authorization);
             await createReviewService(user, cardId);
             this.setStatus(EHttpStatus.NO_CONTENT);
+
+            return;
         } catch (error) {
             logError(error);
 
@@ -180,6 +185,8 @@ export class CardController extends Controller {
             const user = getCurrentUser(request.headers.authorization);
             await removeReviewsService(user, cardId);
             this.setStatus(EHttpStatus.NO_CONTENT);
+
+            return;
         } catch (error) {
             logError(error);
 

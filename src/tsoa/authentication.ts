@@ -2,7 +2,8 @@ import { Request } from "express";
 import { EHttpStatus, HttpError } from "../utils";
 import { verify } from "jsonwebtoken";
 
-export const expressAuthentication = (req: Request): Promise<unknown> => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const expressAuthentication = (req: Request, securityName: string, scopes?: string[]): Promise<unknown> => {
     const authorization = req.headers.authorization;
 
     return new Promise((resolve, reject) => {

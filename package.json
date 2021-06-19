@@ -4,11 +4,14 @@
   "description": "Anki node server",
   "main": "dist/app.js",
   "scripts": {
-    "start": "tsoa spec-and-routes && tsc && node dist/app.js",
-    "start:dev": "tsoa spec-and-routes && nodemon -L --watch src/ --watch build/ -e ts index.js",
+    "start": "tsoa spec-and-routes && tsc && node dist/src/app.js",
+    "start:dev": "tsoa spec-and-routes && nodemon -L --watch src/ -e ts index.js",
     "lint": "eslint --ext .ts,.tsx src/**/*.ts",
     "compile": "tsc --noEmit",
-    "doc": "tsoa spec-and-routes"
+    "doc": "tsoa spec-and-routes",
+    "build": "tsoa spec-and-routes && tsc",
+    "docker": "docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d",
+    "docker:dev": "docker-compose -f docker-compose.yml -f docker-compose.development.yml up -d"
   },
   "keywords": [],
   "author": "",
@@ -27,7 +30,6 @@
     "@typescript-eslint/parser": "^4.22.0",
     "@vjpr/babel-plugin-parameter-decorator": "^1.0.15",
     "babel-plugin-transform-class-properties": "^6.24.1",
-    "cors": "^2.8.5",
     "eslint": "^7.24.0",
     "eslint-config-prettier": "^8.2.0",
     "eslint-plugin-prettier": "^3.4.0",
@@ -38,7 +40,8 @@
     "typescript": "^4.2.4"
   },
   "dependencies": {
-    "bcrypt": "^5.0.1",
+    "cors": "^2.8.5",
+    "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "cookie-parser": "^1.4.5",
     "date-fns": "^2.21.1",

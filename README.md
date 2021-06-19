@@ -39,11 +39,19 @@ You'll need to follow these steps:
 
 ### Docker Commands
 
-- To access a container in command line you can run `docker-compose exec [server|mongo] sh`
-- To get the logs of a specific container `docker logs -f [anki-server|anki-db]`
-- To restart the containers `docker-compose restart`
-
 ## Dev
+
+- To lunch the container in dev mode lunch `npm run docker:dev [--build]`;
 
 If you want to update the swagger (`localhost:3000/docs` by default) run `npm run doc`.
 This will regenerate the router + the swagger specs.
+
+## Prod
+
+- To lunch the container in prod mode lunch `npm run docker [--build]`;
+
+If you want to update the swagger (`localhost:3000/docs` by default);
+You can access a prod version at localhost:3000.
+You can access a dev/ci/test version at localhost:3001.
+
+This dev server can be remove if not necessary.

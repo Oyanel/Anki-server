@@ -3,7 +3,7 @@
   "noImplicitAdditionalProperties": "throw-on-extras",
   "controllerPathGlobs": ["src/api/*Controller.ts"],
   "spec": {
-    "outputDirectory": "build",
+    "outputDirectory": "./",
     "specVersion": 3,
     "securityDefinitions": {
       "Authorization": {
@@ -15,7 +15,7 @@
     }
   },
   "routes": {
-    "routesDir": "build",
+    "routesDir": "./src",
     "authenticationModule": "./src/tsoa/authentication"
   }
 }

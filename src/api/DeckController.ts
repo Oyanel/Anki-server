@@ -125,8 +125,9 @@ export class DeckController extends Controller {
         try {
             const user = getCurrentUser(request.headers.authorization);
             await updateDeckService(user, deckId, name, description, isPrivate);
-
             this.setStatus(EHttpStatus.NO_CONTENT);
+
+            return;
         } catch (error) {
             logError(error);
 
@@ -147,6 +148,8 @@ export class DeckController extends Controller {
             const user = getCurrentUser(request.headers.authorization);
             await deleteDeckService(user.email.valueOf(), deckId);
             this.setStatus(EHttpStatus.NO_CONTENT);
+
+            return;
         } catch (error) {
             logError(error);
 
@@ -154,7 +157,7 @@ export class DeckController extends Controller {
         }
     }
 
-    @Get("search")
+    @Get()
     async searchDecks(
         @Request() request: express.Request,
         @Query() skip?: number,

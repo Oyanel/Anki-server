@@ -2,7 +2,7 @@ import User from "../models/authentication/User";
 import { IProfile, IUser, IUserRegistration } from "../models/authentication/User/IUser";
 import { EHttpStatus, HttpError } from "../utils";
 import { SALT_ROUND } from "../constant";
-import { hashSync } from "bcrypt";
+import { hashSync } from "bcryptjs";
 import { Types } from "mongoose";
 
 const isUserExisting = (email: String) => User.countDocuments({ email }).then((count) => count > 0);

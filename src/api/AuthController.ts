@@ -32,13 +32,15 @@ export class AuthController extends Controller {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Password invalid");
         }
 
-        if (!validateUsername(username.valueOf())) {
+        if (!validateUsername(username)) {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Username incorrect");
         }
 
         try {
             await registerService(user);
             this.setStatus(EHttpStatus.CREATED);
+
+            return;
         } catch (error) {
             logError(error);
 

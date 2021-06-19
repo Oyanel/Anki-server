@@ -5,7 +5,7 @@ import { IUserBase, TUserDocument, TUserResponse } from "../models/authenticatio
 import { sign, verify } from "jsonwebtoken";
 import "dotenv";
 import { EHttpStatus, HttpError } from "../utils";
-import { compare } from "bcrypt";
+import { compare } from "bcryptjs";
 import { addHours, addMinutes } from "date-fns";
 import { LeanDocument } from "mongoose";
 
