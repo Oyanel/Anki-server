@@ -1,16 +1,24 @@
-FROM node:14 As development
-
-RUN npm install --global node-pre-gyp
-RUN apt-get update && apt-get install -y build-essential && apt-get install -y python && npm install
-
+FROM node:lts-alpine@sha256:cc1a31b2f4a3b8e9cdc6f8dc0c39a3b946d7aa5d10a53439d960d4352b2acfc0 as build
 WORKDIR /usr/src/app
 
-COPY package*.json ./
-
-ARG NODE_ENV=development
-
-RUN npm ci
+COPY package.json .
+RUN npm install
 
 COPY . .
 
-RUN npm run compile
+FROM build as build-dist
+WORKDIR /usr/src/app
+
+RUN npm ci --only-production
+RUN npm run build
+
+
+FROM build AS development
+RUN npm ci
+
+FROM node:lts-alpine@sha256:cc1a31b2f4a3b8e9cdc6f8dc0c39a3b946d7aa5d10a53439d960d4352b2acfc0 as production
+WORKDIR /usr/src/app
+
+COPY package*.json .
+RUN npm ci --production
+COPY --from=build-dist /usr/src/app/dist dist

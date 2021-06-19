@@ -4,7 +4,7 @@ import { EHttpStatus, HttpError } from "../utils";
 import { LeanDocument, Types } from "mongoose";
 import { isCardOwned } from "./deckService";
 import { logError } from "../utils/error/error";
-import { IPagination } from "../api/common/Pagination/IPagination";
+import { IPaginatedQuery } from "../api/common/Pagination/IPagination";
 import { TUserResponse } from "../models/authentication/User/IUser";
 import { createReviewService } from "./reviewService";
 
@@ -13,12 +13,14 @@ export const createCardService = async (
     deckId: String,
     front: String[],
     back: String[],
+    example: String,
     hasReversedCard: boolean
 ) => {
     const newCard: ICard = {
         deck: deckId,
         back,
         front,
+        example,
     };
     const promises = [];
     const cards = [];
@@ -67,7 +69,13 @@ export const getCardService = async (userDecks: String[], id: string) => {
     });
 };
 
-export const updateCardService = async (userDecks: String[], id: string, front: String[], back: String[]) => {
+export const updateCardService = async (
+    userDecks: String[],
+    id: string,
+    front: String[],
+    back: String[],
+    example: String
+) => {
     if (!(await isCardOwned(userDecks, id))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
@@ -80,6 +88,7 @@ export const updateCardService = async (userDecks: String[], id: string, front: 
             }
             cardDocument.front = front;
             cardDocument.back = back;
+            cardDocument.example = example;
             await cardDocument.save();
         });
 };
@@ -97,16 +106,17 @@ export const deleteCardService = async (userDecks: String[], id: string) =>
         card.deleteOne();
     });
 
-export const searchCardsService = async (userDecks: String[], query: IQueryCard, pagination: IPagination) => {
-    const nameCondition = { $in: new RegExp(query.name ?? "", "i") };
+export const searchCardsService = async (userDecks: String[], query: IPaginatedQuery<IQueryCard>) => {
+    const { name, reverse, toReview, limit, skip } = query;
+    const nameCondition = { $in: new RegExp(name ?? "", "i") };
     let nextReviewCondition, reverseCondition;
 
-    if (query.toReview !== undefined) {
-        nextReviewCondition = query.toReview ? { $lt: new Date() } : { $gt: new Date() };
+    if (toReview !== undefined) {
+        nextReviewCondition = toReview ? { $lt: new Date() } : { $gt: new Date() };
     }
 
-    if (query.reverse !== undefined) {
-        reverseCondition = { $exists: query.reverse };
+    if (reverse !== undefined) {
+        reverseCondition = { $exists: reverse };
     }
 
     const conditions = {
@@ -119,8 +129,8 @@ export const searchCardsService = async (userDecks: String[], query: IQueryCard,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     return Card.find(conditions)
-        .skip(pagination.skip)
-        .limit(pagination.limit)
+        .skip(skip)
+        .limit(limit)
         .lean()
         .exec()
         .then((cardDocuments) => cardDocuments.map((cardDocument) => getCardResponse(cardDocument)));
@@ -131,6 +141,7 @@ const getNewReversedCard = (card: TCardDocument) => {
         deck: card.deck,
         front: card.back,
         back: card.front,
+        example: card.example,
         referenceCard: card._id,
     };
 
@@ -143,6 +154,7 @@ const getCardResponse = (cardDocument: TCardDocument | LeanDocument<TCardDocumen
         deck: cardDocument.deck,
         back: cardDocument.back as String[],
         front: cardDocument.front as String[],
+        example: cardDocument.example,
         isReversed: Boolean(cardDocument.referenceCard),
     };
 

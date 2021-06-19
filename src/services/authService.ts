@@ -5,7 +5,7 @@ import { IUserBase, TUserDocument, TUserResponse } from "../models/authenticatio
 import { sign, verify } from "jsonwebtoken";
 import "dotenv";
 import { EHttpStatus, HttpError } from "../utils";
-import { compare } from "bcrypt";
+import { compare } from "bcryptjs";
 import { addHours, addMinutes } from "date-fns";
 import { LeanDocument } from "mongoose";
 
@@ -18,7 +18,7 @@ const saveToken = async (accessToken: String, refreshToken: String, user: TUserR
         refreshTokenExpiresAt: addHours(new Date(), 4),
     };
 
-    Token.findOneAndReplace({ user: user.email }, tokenModel, { upsert: true });
+    await Token.findOneAndReplace({ user: user.email }, tokenModel, { upsert: true }).lean().exec();
 
     return tokenModel;
 };

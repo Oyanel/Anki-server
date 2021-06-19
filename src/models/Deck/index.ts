@@ -19,7 +19,7 @@ const DeckSchema = new Schema<TDeckDocument>(
             type: [Types.ObjectId],
             required: true,
         },
-        private: {
+        isPrivate: {
             type: Boolean,
             required: true,
         },

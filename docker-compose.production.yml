@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+    mongo:
+        image: mongo:4.2.6
+        environment:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ADMIN_PASSWORD}
+        restart: unless-stopped
+
+    api:
+        build:
+            target: production
+        command: node dist/src/app.js
+        environment:
+            NODE_ENV: production
+            PORT: 3000
+            DATABASE_NAME: ${DATABASE_NAME_PROD}
+            MONGO_USER: ${MONGO_USER_PROD}
+            MONGO_PWD: ${MONGO_PWD_PROD}
+        restart: always
+
+    api_dev:
+        container_name: api_dev
+        build:
+            context: ./
+            target: development
+        command: npm run start:dev
+        environment:
+            PORT: 3001
+            NODE_ENV: development
+            DATABASE_NAME: ${DATABASE_NAME_DEV}
+            MONGO_USER: ${MONGO_USER_DEV}
+            MONGO_PWD: ${MONGO_PWD_DEV}
+            MONGO_URL: mongo:27017
+        depends_on:
+            - mongo
+        links:
+            - mongo
+        ports:
+            - 3001:3001
+        restart: unless-stopped
+

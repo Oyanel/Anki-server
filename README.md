@@ -36,3 +36,22 @@ You'll need to follow these steps:
 1. have a `DB_DATA PATH` environment variable set if you want to persist database data in a volume
 2. run `docker-compose up -d`
 3. Rename your `.env.default` to `.env` and think to change the secret keys with your own 
+
+### Docker Commands
+
+## Dev
+
+- To lunch the container in dev mode lunch `npm run docker:dev [--build]`;
+
+If you want to update the swagger (`localhost:3000/docs` by default) run `npm run doc`.
+This will regenerate the router + the swagger specs.
+
+## Prod
+
+- To lunch the container in prod mode lunch `npm run docker [--build]`;
+
+If you want to update the swagger (`localhost:3000/docs` by default);
+You can access a prod version at localhost:3000.
+You can access a dev/ci/test version at localhost:3001.
+
+This dev server can be remove if not necessary.
