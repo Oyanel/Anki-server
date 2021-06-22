@@ -3,34 +3,32 @@ import Deck from "../models/Deck";
 import { EHttpStatus, HttpError } from "../utils";
 import { createCardService } from "./cardService";
 import { FilterQuery, LeanDocument, Types } from "mongoose";
-import { addDeckToProfile, isDeckOwned } from "./userService";
+import { addDeckToProfile, getUserDecks, isDeckOwned } from "./userService";
 import { IPagination } from "../api/common/Pagination/IPagination";
 import { TUserResponse } from "../models/authentication/User/IUser";
-import { removeReviewsService } from "./reviewService";
 import { ICreateCard } from "../models/Card/ICard";
 
-export const isDeckExisting = async (condition: FilterQuery<IDeck>) =>
-    Deck.countDocuments(condition).then((count) => count > 0);
+export const isDeckExisting = async (deckId: string) =>
+    Deck.countDocuments({ _id: Types.ObjectId(deckId) }).then((count) => count > 0);
 
-export const isDeckAccessible = async (userDecks: String[], cardId: string) => {
-    const isOwnedCondition = { _id: { $in: userDecks }, cards: { $in: Types.ObjectId(cardId) } };
-    const isPublicCondition = { private: false };
-    const orCondition = { $or: [isOwnedCondition, isPublicCondition] };
+export const isDeckAccessible = async (email: string, deckId: string) => {
+    const { privateDecks, reviewedDecks } = await getUserDecks(email);
+
+    if (privateDecks.concat(reviewedDecks).includes(deckId)) {
+        return true;
+    }
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return await Deck.countDocuments(orCondition)
+    return await Deck.findById(deckId)
+        .lean()
         .exec()
-        .then((count) => count > 0);
+        .then((deckDocument) => !deckDocument.isPrivate);
 };
 
-export const isCardOwned = async (userDecks: String[], cardId: string, usePublicCards?: boolean) => {
-    const orConditions = [];
-    orConditions.push({ _id: { $in: userDecks }, cards: { $in: Types.ObjectId(cardId) } });
-
-    if (usePublicCards) {
-        orConditions.push({ private: false });
-    }
+export const isCardOwned = async (email: string, cardId: string) => {
+    const { privateDecks } = await getUserDecks(email);
+    const orConditions = [{ _id: { $in: privateDecks }, cards: { $in: Types.ObjectId(cardId) } }];
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -39,17 +37,17 @@ export const isCardOwned = async (userDecks: String[], cardId: string, usePublic
         .then((count) => count > 0);
 };
 
-export const addCardService = async (user: TUserResponse, deckId: string, card: ICreateCard) => {
+export const addCardService = async (email: string, deckId: string, card: ICreateCard) => {
     const { front, back, example, reverseCard } = card;
-    if (!(await isDeckExisting({ _id: Types.ObjectId(deckId) }))) {
+    if (!(await isDeckExisting(deckId))) {
         throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
     }
 
-    if (!(await isDeckOwned(user.email.valueOf(), deckId))) {
+    if (!(await isDeckOwned(email, deckId))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
-    const cards = await createCardService(user, deckId, front, back, example, reverseCard);
+    const cards = await createCardService(email, deckId, front, back, example, reverseCard);
     const cardId = cards[0].id;
 
     await Deck.findOne({ _id: Types.ObjectId(deckId) })
@@ -81,8 +79,8 @@ export const createDeckService = async (userEmail: string, deckQuery: ICreateDec
     return deck;
 };
 
-export const getDeckService = async (userDecks: String[], id: string) => {
-    if (!(await isDeckAccessible(userDecks, id))) {
+export const getDeckService = async (email: string, id: string) => {
+    if (!(await isDeckAccessible(email, id))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
@@ -105,10 +103,6 @@ export const updateDeckService = async (
     const promises = [];
     if (!(await isDeckOwned(user.email.valueOf(), id))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
-    }
-
-    if (isPrivate) {
-        promises.push(removeReviewsService(user, id));
     }
 
     const updateDeckPromise = Deck.findById(Types.ObjectId(id))
@@ -139,15 +133,19 @@ export const deleteDeckService = async (userEmail: string, id: string) =>
         deck.deleteOne();
     });
 
-export const searchDecksService = async (userDecks: String[], query: IQueryDeck, pagination: IPagination) => {
-    const isPrivateDeckCondition = { _id: { $in: userDecks } };
+export const searchDecksService = async (email: string, query: IQueryDeck, pagination: IPagination) => {
+    const { privateDecks } = await getUserDecks(email);
+    const isPrivateDeckCondition = { _id: { $in: privateDecks } };
     const { isPrivate, name, from } = query;
-    const isDeckPublicCondition = { isPrivate: false };
+    const orCondition: FilterQuery<IDeck> = [{ isPrivate: isPrivate ?? false }];
+    if (isPrivate || isPrivate === undefined) {
+        orCondition.push(isPrivateDeckCondition);
+    }
     const condition = {
-        $or: [isPrivateDeckCondition, isDeckPublicCondition],
+        $or: orCondition,
+        isPrivate: isPrivate ? true : undefined,
         name: { $regex: new RegExp(name ?? "", "i") },
         createdAt: from ? { $gt: from } : undefined,
-        isPrivate,
     };
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

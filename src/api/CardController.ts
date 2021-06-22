@@ -21,7 +21,7 @@ import { ICardResponse, IQueryCard } from "../models/Card/ICard";
 import { IPaginatedQuery } from "./common/Pagination/IPagination";
 import express from "express";
 import { CARD_REVIEW_LEVEL, IReviewLevel, TReviewResponse } from "../models/Review/IReview";
-import { createReviewService, removeReviewsService, reviewCardService } from "../services/reviewService";
+import { reviewCardService } from "../services/reviewService";
 
 @Route("cards")
 @Tags("Card")
@@ -39,7 +39,6 @@ export class CardController extends Controller {
         @Query() name?: string
     ): Promise<ICardResponse[]> {
         try {
-            console.log("test");
             const user = getCurrentUser(request.headers.authorization);
             const paginatedCardQuery: IPaginatedQuery<IQueryCard> = {
                 skip: skip ?? 0,
@@ -49,7 +48,7 @@ export class CardController extends Controller {
                 name,
             };
 
-            return await searchCardsService(user.profile.decks, paginatedCardQuery);
+            return await searchCardsService(user.email.valueOf(), paginatedCardQuery);
         } catch (error) {
             logError(error);
 
@@ -67,7 +66,7 @@ export class CardController extends Controller {
         try {
             const user = getCurrentUser(request.headers.authorization);
 
-            return await getCardService(user.profile.decks, cardId);
+            return await getCardService(user.email.valueOf(), cardId);
         } catch (error) {
             logError(error);
 
@@ -92,7 +91,7 @@ export class CardController extends Controller {
 
         try {
             const user = getCurrentUser(request.headers.authorization);
-            await updateCardService(user.profile.decks, cardId, front, back, example);
+            await updateCardService(user.email.valueOf(), cardId, front, back, example);
             this.setStatus(EHttpStatus.NO_CONTENT);
 
             return;
@@ -114,7 +113,7 @@ export class CardController extends Controller {
 
         try {
             const user = getCurrentUser(request.headers.authorization);
-            await deleteCardService(user.profile.decks, cardId);
+            await deleteCardService(user.email.valueOf(), cardId);
             this.setStatus(EHttpStatus.NO_CONTENT);
 
             return;
@@ -139,54 +138,11 @@ export class CardController extends Controller {
         if (reviewLevel === undefined || !isValidObjectId(cardId)) {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request");
         }
-        try {
-            const user = getCurrentUser(request.headers.authorization);
-
-            return await reviewCardService(user, cardId, reviewLevel);
-        } catch (error) {
-            logError(error);
-
-            throw error instanceof HttpError ? error : new HttpError();
-        }
-    }
-
-    @Post("{cardId}/join")
-    @Response<HttpError>(EHttpStatus.NOT_FOUND)
-    @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
-    @SuccessResponse(EHttpStatus.NO_CONTENT)
-    async createReviewCard(cardId: string, @Request() request: express.Request) {
-        if (!isValidObjectId(cardId)) {
-            throw new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request");
-        }
 
         try {
             const user = getCurrentUser(request.headers.authorization);
-            await createReviewService(user, cardId);
-            this.setStatus(EHttpStatus.NO_CONTENT);
 
-            return;
-        } catch (error) {
-            logError(error);
-
-            throw error instanceof HttpError ? error : new HttpError();
-        }
-    }
-
-    @Delete("{cardId}/unreview")
-    @Response<HttpError>(EHttpStatus.NOT_FOUND)
-    @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
-    @SuccessResponse(EHttpStatus.NO_CONTENT)
-    async unreviewCard(cardId: string, @Request() request: express.Request) {
-        if (!isValidObjectId(cardId)) {
-            throw new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request");
-        }
-
-        try {
-            const user = getCurrentUser(request.headers.authorization);
-            await removeReviewsService(user, cardId);
-            this.setStatus(EHttpStatus.NO_CONTENT);
-
-            return;
+            return await reviewCardService(user.email.valueOf(), cardId, reviewLevel);
         } catch (error) {
             logError(error);
 

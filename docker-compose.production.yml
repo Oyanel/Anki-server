@@ -24,11 +24,11 @@ services:
         container_name: api_dev
         build:
             context: ./
-            target: development
-        command: npm run start:dev
+            target: production
+        command: node dist/src/app.js
         environment:
             PORT: 3001
-            NODE_ENV: development
+            NODE_ENV: production
             DATABASE_NAME: ${DATABASE_NAME_DEV}
             MONGO_USER: ${MONGO_USER_DEV}
             MONGO_PWD: ${MONGO_PWD_DEV}

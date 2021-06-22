@@ -3,57 +3,46 @@ import { addDays, differenceInDays } from "date-fns";
 import Card from "../models/Card";
 import Review from "../models/Review";
 import { EHttpStatus, HttpError } from "../utils";
-import { LeanDocument, Types } from "mongoose";
-import { isCardOwned } from "./deckService";
-import { ICardReview, TReviewResponse, TReviewDocument } from "../models/Review/IReview";
-import { TUserResponse } from "../models/authentication/User/IUser";
+import { FilterQuery, LeanDocument, Types } from "mongoose";
+import { ICardReview, IReview, TReviewDocument, TReviewResponse } from "../models/Review/IReview";
+import { isCardReviewable } from "./userService";
 
 export const isCardReviewed = (userEmail: string, cardId: string) =>
     Review.countDocuments({ user: userEmail, card: cardId }).then((count) => count > 0);
 
-export const removeReviewsService = async (user: TUserResponse, id: string) => {
-    const cardDocument = await Card.findById(Types.ObjectId(id)).exec();
+export const getReviews = async (email: string, cards: string[], toReview?: boolean) => {
+    let nextReviewCondition;
 
-    if (await isCardOwned(user.profile.decks, id)) {
-        throw new HttpError(EHttpStatus.NOT_FOUND, "You cannot unreview a private card");
+    if (toReview !== undefined) {
+        nextReviewCondition = toReview ? { $lt: new Date() } : { $gt: new Date() };
     }
 
-    if (!cardDocument) {
-        throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
-    }
+    const condition: FilterQuery<IReview> = {
+        card: { $in: cards },
+        user: email,
+        nextReview: nextReviewCondition,
+    };
 
-    await Review.find({ card: Types.ObjectId(id), user: { $ne: user.email } })
+    return Review.find(condition)
+        .lean()
         .exec()
-        .then(async (reviews) => {
-            if (reviews.length === 0) {
-                throw new HttpError(EHttpStatus.NOT_FOUND, "No review found");
-            }
-            reviews.forEach((review) => review.deleteOne());
-        });
+        .then((reviews) => reviews);
 };
 
-export const reviewCardService = async (user: TUserResponse, id: string, reviewQuality: number) => {
-    const promiseReview = Review.findOne({ card: Types.ObjectId(id), user: user.email.valueOf() }).exec();
+export const reviewCardService = async (email: string, id: string, reviewQuality: number) => {
+    const promiseReview = Review.findOne({ card: Types.ObjectId(id), user: email }).exec();
     const promiseCard = Card.findById(Types.ObjectId(id)).exec();
 
     return await Promise.all([promiseCard, promiseReview]).then(async (response) => {
         const card = response[0];
-        const review = response[1];
+        const review = response[1] ?? (await createReviewService(email, id));
 
         if (!card) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
         }
 
-        if (!(await isCardOwned(user.profile.decks, id))) {
+        if (!(await isCardReviewable(email, id))) {
             throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
-        }
-
-        if (!card) {
-            throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
-        }
-
-        if (!review) {
-            throw new HttpError(EHttpStatus.NOT_FOUND, "Review not found for this card");
         }
 
         const newCardReview = getNextReview(reviewQuality, review);
@@ -68,12 +57,26 @@ export const reviewCardService = async (user: TUserResponse, id: string, reviewQ
     });
 };
 
-export const createReviewService = async (user: TUserResponse, cardId: string) => {
-    if (!(await isCardOwned(user.profile.decks, cardId, true))) {
-        throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
-    }
+export const createReviewsService = async (email: string, cardIdList: string[]) => {
+    const reviewList: IReview[] = [];
+    cardIdList.forEach((cardId) => {
+        reviewList.push(
+            new Review({
+                card: cardId,
+                lastReview: new Date(),
+                nextReview: addDays(new Date(), 1),
+                easeFactor: 2.5,
+                views: 0,
+                user: email,
+            })
+        );
+    });
 
-    if (await isCardReviewed(user.email.valueOf(), cardId)) {
+    return await Review.insertMany(reviewList);
+};
+
+export const createReviewService = async (email: string, cardId: string) => {
+    if (await isCardReviewed(email, cardId)) {
         throw new HttpError(EHttpStatus.BAD_REQUEST, "You already review this card");
     }
 
@@ -83,10 +86,10 @@ export const createReviewService = async (user: TUserResponse, cardId: string) =
         nextReview: addDays(new Date(), 1),
         easeFactor: 2.5,
         views: 0,
-        user: user.email,
+        user: email,
     });
 
-    await newReview.save();
+    return await newReview.save();
 };
 
 /**
@@ -143,27 +146,21 @@ const getNextReview = (quality: number, review: TReviewDocument) => {
     return newCardReview;
 };
 
-const getNewEaseFactor = (easeFactor, quality) => {
-    return easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-};
+const getNewEaseFactor = (easeFactor, quality) => easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
 
 const getCardReviewResponse = (
     cardDocument: TCardDocument | LeanDocument<TCardDocument>,
     review: TReviewDocument | LeanDocument<TReviewDocument>
-) => {
-    const cardReview: TReviewResponse = {
-        id: cardDocument._id,
-        user: review.user,
-        deck: cardDocument.deck,
-        back: cardDocument.back as String[],
-        front: cardDocument.front as String[],
-        example: cardDocument.example,
-        isReversed: !!cardDocument.referenceCard,
-        easeFactor: review.easeFactor,
-        lastReview: review.lastReview,
-        nextReview: review.nextReview,
-        views: review.views,
-    };
-
-    return cardReview;
-};
+): TReviewResponse => ({
+    id: cardDocument._id,
+    user: review.user,
+    deck: cardDocument.deck,
+    back: cardDocument.back as String[],
+    front: cardDocument.front as String[],
+    example: cardDocument.example,
+    isReversed: !!cardDocument.referenceCard,
+    easeFactor: review.easeFactor,
+    lastReview: review.lastReview,
+    nextReview: review.nextReview,
+    views: review.views,
+});

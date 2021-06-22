@@ -16,6 +16,7 @@ import {
     Delete,
     Get,
     Post,
+    Path,
     Put,
     Query,
     Request,
@@ -30,6 +31,7 @@ import { ICardResponse, ICreateCard } from "../models/Card/ICard";
 import { ICreateDeck, IDeckResponse, IQueryDeck } from "../models/Deck/IDeck";
 import { IPagination } from "./common/Pagination/IPagination";
 import { formatISO, parse } from "date-fns";
+import { joinDeckService, leaveDeckService } from "../services/userService";
 
 @Route("decks")
 @Tags("Deck")
@@ -52,7 +54,7 @@ export class DeckController extends Controller {
 
         try {
             const user = getCurrentUser(request.headers.authorization);
-            const newCard = await addCardService(user, deckId, card);
+            const newCard = await addCardService(user.email.valueOf(), deckId, card);
 
             this.setStatus(EHttpStatus.CREATED);
 
@@ -64,7 +66,7 @@ export class DeckController extends Controller {
         }
     }
 
-    @Post("{deckId}")
+    @Post()
     @Response<HttpError>(EHttpStatus.NOT_FOUND)
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
     @SuccessResponse(EHttpStatus.CREATED)
@@ -88,6 +90,50 @@ export class DeckController extends Controller {
         }
     }
 
+    @Post("{deckId}/join")
+    @Response<HttpError>(EHttpStatus.NOT_FOUND)
+    @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
+    @SuccessResponse(EHttpStatus.CREATED)
+    async joinDeck(@Request() request: express.Request, @Path() deckId: string): Promise<void> {
+        if (!isValidObjectId(deckId)) {
+            throw new HttpError(EHttpStatus.BAD_REQUEST, "Deck id invalid");
+        }
+
+        try {
+            const user = getCurrentUser(request.headers.authorization);
+            await joinDeckService(user.email.valueOf(), deckId);
+            this.setStatus(EHttpStatus.CREATED);
+
+            return;
+        } catch (error) {
+            logError(error);
+
+            throw error instanceof HttpError ? error : new HttpError();
+        }
+    }
+
+    @Delete("{deckId}/leave")
+    @Response<HttpError>(EHttpStatus.NOT_FOUND)
+    @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
+    @SuccessResponse(EHttpStatus.NO_CONTENT)
+    async leaveDeck(@Request() request: express.Request, @Path() deckId: string): Promise<void> {
+        if (!isValidObjectId(deckId)) {
+            throw new HttpError(EHttpStatus.BAD_REQUEST, "Deck id invalid");
+        }
+
+        try {
+            const user = getCurrentUser(request.headers.authorization);
+            await leaveDeckService(user.email.valueOf(), deckId);
+            this.setStatus(EHttpStatus.CREATED);
+
+            return;
+        } catch (error) {
+            logError(error);
+
+            throw error instanceof HttpError ? error : new HttpError();
+        }
+    }
+
     @Get("{deckId}")
     @Response<HttpError>(EHttpStatus.NOT_FOUND)
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
@@ -99,7 +145,7 @@ export class DeckController extends Controller {
         try {
             const user = getCurrentUser(request.headers.authorization);
 
-            return await getDeckService(user.profile.decks, deckId);
+            return await getDeckService(user.email.valueOf(), deckId);
         } catch (error) {
             logError(error);
 
@@ -119,7 +165,7 @@ export class DeckController extends Controller {
         }
 
         if (!validateName(name) || !validateDescription(description)) {
-            throw new HttpError(EHttpStatus.BAD_REQUEST, "Card invalid");
+            throw new HttpError(EHttpStatus.BAD_REQUEST, "Deck information invalid");
         }
 
         try {
@@ -176,7 +222,7 @@ export class DeckController extends Controller {
 
             const user = getCurrentUser(request.headers.authorization);
 
-            return await searchDecksService(user.profile.decks, query, pagination);
+            return await searchDecksService(user.email.valueOf(), query, pagination);
         } catch (error) {
             logError(error);
 

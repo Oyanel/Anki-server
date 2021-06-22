@@ -16,7 +16,8 @@ const UserSchema = new Schema<TUserDocument>(
         },
         profile: {
             username: String,
-            decks: [Types.ObjectId],
+            privateDecks: [Types.ObjectId],
+            reviewedDecks: [Types.ObjectId],
         },
     },
     { timestamps: true }

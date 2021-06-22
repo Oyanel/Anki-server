@@ -34,15 +34,12 @@ DeckSchema.pre("remove", async function (next) {
         },
     }).exec();
 
-    const userPromise = User.update(
-        {
-            "profile.decks": {
-                $in: this._id,
-            },
-        },
+    const userPromise = User.updateMany(
+        {},
         {
             $pull: {
-                "profile.decks": this._id,
+                "profile.privateDecks": this._id,
+                "profile.reviewedDecks": this._id,
             },
         }
     ).exec();

@@ -5,40 +5,40 @@ import { LeanDocument, Types } from "mongoose";
 import { isCardOwned } from "./deckService";
 import { logError } from "../utils/error/error";
 import { IPaginatedQuery } from "../api/common/Pagination/IPagination";
-import { TUserResponse } from "../models/authentication/User/IUser";
-import { createReviewService } from "./reviewService";
+import { getUserDecks } from "./userService";
+import { createReviewService, getReviews } from "./reviewService";
+
+export const getDeckCardsService = async (deckId: string) => Card.find({ deck: deckId }).lean().exec();
 
 export const createCardService = async (
-    user: TUserResponse,
+    email: string,
     deckId: String,
     front: String[],
     back: String[],
     example: String,
     hasReversedCard: boolean
 ) => {
-    const newCard: ICard = {
-        deck: deckId,
-        back,
-        front,
-        example,
-    };
     const promises = [];
     const cards = [];
 
     try {
-        const cardDocument = await Card.create<ICard>(newCard);
-        const promiseReview = createReviewService(user, cardDocument._id).catch((error) => {
+        const cardDocument = new Card({
+            deck: deckId,
+            back,
+            front,
+            example,
+        });
+        const newCard = await cardDocument.save();
+        cards.push(getCardResponse(newCard));
+        const promiseReview = createReviewService(email, cardDocument._id).catch((error) => {
             cardDocument.deleteOne();
             throw error;
         });
-
         promises.push(promiseReview);
-        cards.push(getCardResponse(cardDocument));
 
         if (hasReversedCard) {
-            const reversedCard = getNewReversedCard(cardDocument);
-            const reversedCardDocument = await Card.create<ICard>(reversedCard);
-            const promiseReversedReview = createReviewService(user, reversedCardDocument._id).catch((error) => {
+            const reversedCardDocument = await new Card(getNewReversedCard(cardDocument)).save();
+            const promiseReversedReview = createReviewService(email, reversedCardDocument._id).catch((error) => {
                 reversedCardDocument.deleteOne();
                 throw error;
             });
@@ -55,9 +55,11 @@ export const createCardService = async (
     }
 };
 
-export const getCardService = async (userDecks: String[], id: string) => {
-    if (!(await isCardOwned(userDecks, id))) {
-        throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
+export const getCardService = async (email: string, id: string, overrideSecurity?: boolean) => {
+    if (!overrideSecurity) {
+        if (!(await isCardOwned(email, id))) {
+            throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
+        }
     }
 
     return Card.findById(Types.ObjectId(id)).then((cardDocument) => {
@@ -70,13 +72,13 @@ export const getCardService = async (userDecks: String[], id: string) => {
 };
 
 export const updateCardService = async (
-    userDecks: String[],
+    email: string,
     id: string,
     front: String[],
     back: String[],
     example: String
 ) => {
-    if (!(await isCardOwned(userDecks, id))) {
+    if (!(await isCardOwned(email, id))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
@@ -93,47 +95,52 @@ export const updateCardService = async (
         });
 };
 
-export const deleteCardService = async (userDecks: String[], id: string) =>
-    Card.findById(Types.ObjectId(id)).then(async (card) => {
+export const deleteCardService = async (email: string, cardId: string) =>
+    Card.findById(Types.ObjectId(cardId)).then(async (card) => {
         if (!card) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
         }
 
-        if (!(await isCardOwned(userDecks, id))) {
+        if (!(await isCardOwned(email, cardId))) {
             throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
         }
 
         card.deleteOne();
     });
 
-export const searchCardsService = async (userDecks: String[], query: IPaginatedQuery<IQueryCard>) => {
+export const searchCardsService = async (email: string, query: IPaginatedQuery<IQueryCard>) => {
+    const { privateDecks, reviewedDecks } = await getUserDecks(email);
     const { name, reverse, toReview, limit, skip } = query;
     const nameCondition = { $in: new RegExp(name ?? "", "i") };
-    let nextReviewCondition, reverseCondition;
-
-    if (toReview !== undefined) {
-        nextReviewCondition = toReview ? { $lt: new Date() } : { $gt: new Date() };
-    }
+    let reverseCondition;
 
     if (reverse !== undefined) {
         reverseCondition = { $exists: reverse };
     }
 
     const conditions = {
-        deck: { $in: userDecks },
+        deck: { $in: privateDecks.concat(reviewedDecks) },
         $or: [{ front: nameCondition }, { back: nameCondition }],
-        nextReview: nextReviewCondition,
         referenceCard: reverseCondition,
     };
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return Card.find(conditions)
+    let cards = await Card.find(conditions)
         .skip(skip)
         .limit(limit)
         .lean()
         .exec()
         .then((cardDocuments) => cardDocuments.map((cardDocument) => getCardResponse(cardDocument)));
+
+    if (toReview) {
+        const cardIds = cards.map((card) => card.id.valueOf());
+        const cardToReviews = await getReviews(email, cardIds, toReview);
+        const cardIdList = cardToReviews.map((review) => review.card.toString());
+        cards = cards.filter((card) => cardIdList.includes(card.id.valueOf()));
+    }
+
+    return cards;
 };
 
 const getNewReversedCard = (card: TCardDocument) => {

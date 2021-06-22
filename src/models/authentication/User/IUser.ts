@@ -2,8 +2,11 @@ import { Document } from "mongoose";
 
 export interface IProfile {
     username: String;
-    decks: String[];
+    privateDecks: String[];
+    reviewedDecks: String[];
 }
+
+export type TUserDecks = Pick<IProfile, "privateDecks" | "reviewedDecks">;
 
 /**
  * @example {
