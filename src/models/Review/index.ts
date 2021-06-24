@@ -31,3 +31,5 @@ const ReviewSchema = new Schema<TReviewDocument>({
 });
 
 export default model<TReviewDocument>("Review", ReviewSchema);
+
+export * from "./IReview";

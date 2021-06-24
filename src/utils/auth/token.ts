@@ -2,7 +2,7 @@ import { verify } from "jsonwebtoken";
 import { HttpError } from "../error/HttpError";
 import { EHttpStatus } from "../IHttp";
 import { logError } from "../error/error";
-import { TUserResponse } from "../../models/authentication/User/IUser";
+import { TUserResponse } from "../../models/authentication/User";
 
 export const getCurrentUser = (authorization: string): TUserResponse => {
     try {

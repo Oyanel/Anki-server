@@ -1,12 +1,11 @@
-import { ICreateDeck, IDeck, IDeckResponse, IQueryDeck, TDeckDocument } from "../models/Deck/IDeck";
-import Deck from "../models/Deck";
+import Deck, { ICreateDeck, IDeck, IDeckResponse, IQueryDeck, TDeckDocument } from "../models/Deck";
 import { EHttpStatus, HttpError } from "../utils";
 import { createCardService } from "./cardService";
 import { FilterQuery, LeanDocument, Types } from "mongoose";
 import { addDeckToProfile, getUserDecks, isDeckOwned } from "./userService";
 import { IPagination } from "../api/common/Pagination/IPagination";
-import { TUserResponse } from "../models/authentication/User/IUser";
-import { ICreateCard } from "../models/Card/ICard";
+import { TUserResponse } from "../models/authentication/User";
+import { ICreateCard } from "../models/Card";
 
 export const isDeckExisting = async (deckId: string) =>
     Deck.countDocuments({ _id: Types.ObjectId(deckId) }).then((count) => count > 0);

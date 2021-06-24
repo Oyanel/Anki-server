@@ -17,10 +17,10 @@ import {
     Post,
     Body,
 } from "tsoa";
-import { ICardResponse, IQueryCard } from "../models/Card/ICard";
+import { ICardResponse, IQueryCard } from "../models/Card";
 import { IPaginatedQuery } from "./common/Pagination/IPagination";
 import express from "express";
-import { IReviewLevel, TReviewResponse } from "../models/Review/IReview";
+import { IReviewLevel, TReviewResponse } from "../models/Review";
 import { reviewCardService } from "../services/reviewService";
 
 @Route("cards")

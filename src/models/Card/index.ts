@@ -38,3 +38,5 @@ CardSchema.pre("remove", async function (next) {
 });
 
 export default model<TCardDocument>("Card", CardSchema);
+
+export * from "./ICard";

@@ -1,5 +1,4 @@
-import { ICard, ICardResponse, IQueryCard, TCardDocument } from "../models/Card/ICard";
-import Card from "../models/Card";
+import Card, { ICard, ICardResponse, IQueryCard, TCardDocument } from "../models/Card";
 import { EHttpStatus, HttpError } from "../utils";
 import { LeanDocument, Types } from "mongoose";
 import { isCardOwned } from "./deckService";

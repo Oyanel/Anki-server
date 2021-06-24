@@ -24,3 +24,5 @@ const UserSchema = new Schema<TUserDocument>(
 );
 
 export default model<TUserDocument>("User", UserSchema);
+
+export * from "./IUser";

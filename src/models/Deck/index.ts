@@ -58,3 +58,5 @@ DeckSchema.pre("remove", async function (next) {
 });
 
 export default model<TDeckDocument>("Deck", DeckSchema);
+
+export * from "./IDeck";

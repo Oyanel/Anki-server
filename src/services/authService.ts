@@ -1,7 +1,5 @@
-import Token from "../models/authentication/Token";
-import User from "../models/authentication/User";
-import { IToken } from "../models/authentication/Token/IToken";
-import { IUserBase, TUserDocument, TUserResponse } from "../models/authentication/User/IUser";
+import Token, { IToken } from "../models/authentication/Token";
+import User, { IUserBase, TUserDocument, TUserResponse } from "../models/authentication/User";
 import { sign, verify } from "jsonwebtoken";
 import "dotenv";
 import { EHttpStatus, HttpError } from "../utils";

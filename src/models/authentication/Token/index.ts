@@ -10,3 +10,5 @@ const TokenSchema = new Schema<TTokenDocument>({
 });
 
 export default model<TTokenDocument>("Token", TokenSchema);
+
+export * from "./IToken";

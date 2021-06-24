@@ -1,17 +1,15 @@
-import { TCardDocument } from "../models/Card/ICard";
 import { addDays, differenceInDays } from "date-fns";
-import Card from "../models/Card";
-import Review from "../models/Review";
-import { EHttpStatus, HttpError } from "../utils";
-import { FilterQuery, LeanDocument, Types } from "mongoose";
-import {
+import Card, { TCardDocument } from "../models/Card";
+import Review, {
     ECardReviewLevel,
     ECardReviewName,
     ICardReview,
     IReview,
     TReviewDocument,
     TReviewResponse,
-} from "../models/Review/IReview";
+} from "../models/Review";
+import { EHttpStatus, HttpError } from "../utils";
+import { FilterQuery, LeanDocument, Types } from "mongoose";
 import { isCardReviewable } from "./userService";
 
 export const isCardReviewed = (userEmail: string, cardId: string) =>
@@ -64,23 +62,20 @@ export const reviewCardService = async (email: string, id: string, reviewQuality
     });
 };
 
-export const createReviewsService = async (email: string, cardIdList: string[]) => {
-    const reviewList: IReview[] = [];
-    cardIdList.forEach((cardId) => {
-        reviewList.push(
-            new Review({
-                card: cardId,
-                lastReview: new Date(),
-                nextReview: addDays(new Date(), 1),
-                easeFactor: 2.5,
-                views: 0,
-                user: email,
-            })
-        );
-    });
-
-    return Review.insertMany(reviewList);
-};
+export const createReviewsService = async (email: string, cardIdList: string[]) =>
+    Review.insertMany(
+        cardIdList.map(
+            (cardId) =>
+                new Review({
+                    card: cardId,
+                    lastReview: new Date(),
+                    nextReview: addDays(new Date(), 1),
+                    easeFactor: 2.5,
+                    views: 0,
+                    user: email,
+                })
+        )
+    );
 
 export const createReviewService = async (email: string, cardId: string) => {
     if (await isCardReviewed(email, cardId)) {

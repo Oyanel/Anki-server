@@ -27,8 +27,8 @@ import {
     Tags,
 } from "tsoa";
 import express from "express";
-import { ICardResponse, ICreateCard } from "../models/Card/ICard";
-import { EDeckModelType, ICreateDeck, IDeckResponse, IQueryDeck } from "../models/Deck/IDeck";
+import { ICardResponse, ICreateCard } from "../models/Card";
+import { EDeckModelType, ICreateDeck, IDeckResponse, IQueryDeck } from "../models/Deck";
 import { IPagination } from "./common/Pagination/IPagination";
 import { formatISO, parse } from "date-fns";
 import { joinDeckService, leaveDeckService } from "../services/userService";

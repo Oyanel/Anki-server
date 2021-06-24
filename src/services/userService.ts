@@ -1,5 +1,4 @@
-import User from "../models/authentication/User";
-import { IProfile, IUser, IUserRegistration, TUserDecks } from "../models/authentication/User/IUser";
+import User, { IProfile, IUser, IUserRegistration, TUserDecks } from "../models/authentication/User";
 import { EHttpStatus, HttpError } from "../utils";
 import { SALT_ROUND } from "../constant";
 import { hashSync } from "bcryptjs";
