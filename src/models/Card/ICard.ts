@@ -1,11 +1,11 @@
 import { Document } from "mongoose";
 
 export interface ICard {
-    deck: String;
-    front: String[];
-    back: String[];
-    example: String;
-    referenceCard?: String;
+    deck: string;
+    front: string[];
+    back: string[];
+    example: string;
+    referenceCard?: string;
 }
 
 /**
@@ -18,7 +18,7 @@ export interface ICard {
  * }
  */
 export interface ICardResponse extends Omit<ICard, "referenceCard"> {
-    id: String;
+    id: string;
     isReversed: boolean;
 }
 
@@ -40,9 +40,9 @@ export interface IQueryCard {
  * }
  */
 export interface ICreateCard {
-    deck: String;
-    front: String[];
-    back: String[];
+    deck: string;
+    front: string[];
+    back: string[];
     reverseCard?: boolean;
-    example?: String;
+    example?: string;
 }

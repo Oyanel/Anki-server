@@ -1,10 +1,10 @@
 import { Document } from "mongoose";
 
 export interface IToken {
-    user: String;
-    accessToken: String;
+    user: string;
+    accessToken: string;
     accessTokenExpiresAt: Date;
-    refreshToken: String;
+    refreshToken: string;
     refreshTokenExpiresAt: Date;
 }
 

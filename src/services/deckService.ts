@@ -20,7 +20,7 @@ export const isDeckAccessible = async (email: string, deckId: string) => {
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return await Deck.findById(deckId)
+    return Deck.findById(deckId)
         .lean()
         .exec()
         .then((deckDocument) => !deckDocument.isPrivate);
@@ -32,7 +32,7 @@ export const isCardOwned = async (email: string, cardId: string) => {
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return await Deck.countDocuments({ $or: orConditions })
+    return Deck.countDocuments({ $or: orConditions })
         .exec()
         .then((count) => count > 0);
 };
@@ -64,17 +64,19 @@ export const addCardService = async (email: string, deckId: string, card: ICreat
 };
 
 export const createDeckService = async (userEmail: string, deckQuery: ICreateDeck) => {
-    const { isPrivate, name, description } = deckQuery;
+    const { isPrivate, name, description, modelType, tags } = deckQuery;
     const newDeck: IDeck = {
         name,
+        modelType,
         description,
+        tags,
         cards: [],
         isPrivate: isPrivate ?? true,
     };
 
     const deck = await Deck.create<IDeck>(newDeck).then((deckDocument) => getDeckResponse(deckDocument));
 
-    await addDeckToProfile(deck.id.valueOf(), userEmail);
+    await addDeckToProfile(deck.id, userEmail);
 
     return deck;
 };
@@ -84,13 +86,16 @@ export const getDeckService = async (email: string, id: string) => {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
-    return await Deck.findById(Types.ObjectId(id)).then((deckDocument) => {
-        if (!deckDocument) {
-            throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
-        }
+    return Deck.findById(Types.ObjectId(id))
+        .lean()
+        .exec()
+        .then((deckDocument) => {
+            if (!deckDocument) {
+                throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
+            }
 
-        return getDeckResponse(deckDocument);
-    });
+            return getDeckResponse(deckDocument);
+        });
 };
 
 export const updateDeckService = async (
@@ -101,7 +106,7 @@ export const updateDeckService = async (
     isPrivate: boolean
 ) => {
     const promises = [];
-    if (!(await isDeckOwned(user.email.valueOf(), id))) {
+    if (!(await isDeckOwned(user.email, id))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
@@ -136,7 +141,7 @@ export const deleteDeckService = async (userEmail: string, id: string) =>
 export const searchDecksService = async (email: string, query: IQueryDeck, pagination: IPagination) => {
     const { privateDecks } = await getUserDecks(email);
     const isPrivateDeckCondition = { _id: { $in: privateDecks } };
-    const { isPrivate, name, from } = query;
+    const { isPrivate, name, from, tags, modelType } = query;
     const orCondition: FilterQuery<IDeck> = [{ isPrivate: isPrivate ?? false }];
     if (isPrivate || isPrivate === undefined) {
         orCondition.push(isPrivateDeckCondition);
@@ -146,6 +151,8 @@ export const searchDecksService = async (email: string, query: IQueryDeck, pagin
         isPrivate: isPrivate ? true : undefined,
         name: { $regex: new RegExp(name ?? "", "i") },
         createdAt: from ? { $gt: from } : undefined,
+        tags: tags ? { $in: tags } : undefined,
+        modelType,
     };
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -160,14 +167,12 @@ export const searchDecksService = async (email: string, query: IQueryDeck, pagin
         });
 };
 
-const getDeckResponse = (deckDocument: TDeckDocument | LeanDocument<TDeckDocument>) => {
-    const deck: IDeckResponse = {
-        id: deckDocument._id,
-        name: deckDocument.name,
-        description: deckDocument.description,
-        cards: deckDocument.cards as String[],
-        isPrivate: deckDocument.isPrivate,
-    };
-
-    return deck;
-};
+const getDeckResponse = (deckDocument: TDeckDocument | LeanDocument<TDeckDocument>): IDeckResponse => ({
+    id: deckDocument._id,
+    modelType: deckDocument.modelType,
+    name: deckDocument.name,
+    description: deckDocument.description,
+    tags: deckDocument.tags,
+    cards: deckDocument.cards,
+    isPrivate: deckDocument.isPrivate,
+});

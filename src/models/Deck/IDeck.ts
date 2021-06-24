@@ -1,18 +1,28 @@
 import { Document } from "mongoose";
 
+export enum EDeckModelType {
+    BASIC = "BASIC",
+    KANJI = "KANJI",
+    COMMON = "COMMON",
+}
+
 /**
  * @example {
  *     "name": "Directions",
  *     "description": "How to give directions to someone",
  *     "isPrivate": true,
+ *     "modelType": "BASIC",
+ *     "tags": ["Information", "Daily life"],
  *     "cards": ["123d1"]
  * }
  */
 export interface IDeck {
-    name: String;
-    description: String;
+    name: string;
+    description: string;
+    modelType: EDeckModelType;
+    tags: string[];
     isPrivate: boolean;
-    cards: String[];
+    cards: string[];
 }
 
 /**
@@ -20,16 +30,20 @@ export interface IDeck {
  *     "id": "123d1",
  *     "name": "Directions",
  *     "description": "How to give directions to someone",
- *     "isPrivate": true
+ *     "isPrivate": true,
+ *     "modelType": "BASIC",
+ *     "tags": ["Information", "Daily life"],
  * }
  */
 export interface IDeckResponse extends IDeck {
-    id: String;
+    id: string;
 }
 
 export interface IQueryDeck {
     name?: string;
     from?: string;
+    tags?: string[];
+    modelType?: EDeckModelType;
     isPrivate?: boolean;
 }
 
@@ -37,12 +51,16 @@ export interface IQueryDeck {
  * @example {
  *     "name": "Directions",
  *     "description": "How to give directions to someone",
- *     "isPrivate": true
+ *     "isPrivate": true,
+ *     "modelType": "BASIC",
+ *     "tags": ["Information", "Daily life"],
  * }
  */
 export interface ICreateDeck {
     name: string;
+    modelType: EDeckModelType;
     description: string;
+    tags: string[];
     isPrivate?: boolean;
 }
 

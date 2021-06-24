@@ -7,9 +7,15 @@ import { isDeckAccessible, isDeckExisting } from "./deckService";
 import { createReviewsService } from "./reviewService";
 import { getCardService, getDeckCardsService } from "./cardService";
 
-const isUserExisting = (email: String) => User.countDocuments({ email }).then((count) => count > 0);
+const isUserExisting = (email: string) => User.countDocuments({ email }).then((count) => count > 0);
 
 export const isDeckOwned = async (email: string, deckId: string) => {
+    const { privateDecks } = await getUserDecks(email);
+
+    return privateDecks.includes(deckId);
+};
+
+export const isDeckReviewed = async (email: string, deckId: string) => {
     const { reviewedDecks, privateDecks } = await getUserDecks(email);
 
     return reviewedDecks.concat(privateDecks).includes(deckId);
@@ -29,7 +35,7 @@ export const registerService = async (user: IUserRegistration) => {
 
     user.password = hashSync(user.password, SALT_ROUND);
 
-    const profile = createProfile(user.username.valueOf());
+    const profile = createProfile(user.username);
     await User.create<IUser>({ email: user.email, profile, password: user.password });
 };
 
@@ -82,13 +88,13 @@ export const leaveDeckService = async (email: string, deckId: string) => {
 };
 
 export const getUserDecks = async (email: string): Promise<TUserDecks> =>
-    await User.findOne({ email }).then((userDocument) => ({
+    User.findOne({ email }).then((userDocument) => ({
         privateDecks: userDocument.profile.privateDecks,
         reviewedDecks: userDocument.profile.reviewedDecks,
     }));
 
 export const addDeckToProfile = async (deckId: string, email: string) =>
-    await User.findOne({ email })
+    User.findOne({ email })
         .exec()
         .then((user) => {
             user.profile.privateDecks.push(deckId);
@@ -96,9 +102,3 @@ export const addDeckToProfile = async (deckId: string, email: string) =>
         });
 
 const createProfile = (username: string): IProfile => ({ username, privateDecks: [], reviewedDecks: [] });
-
-export const isDeckReviewed = async (email: string, deckId: string) => {
-    const { reviewedDecks, privateDecks } = await getUserDecks(email);
-
-    return reviewedDecks.concat(privateDecks).includes(deckId);
-};

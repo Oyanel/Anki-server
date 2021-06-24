@@ -1,6 +1,6 @@
 import { config, createLogger, format as winstonFormat, transports } from "winston";
 import { format } from "date-fns";
-import { DATE_FORMAT } from "../date/format";
+import { DATE_FORMAT } from "../../constant";
 const { combine, timestamp, prettyPrint, colorize, errors } = winstonFormat;
 
 const options = {

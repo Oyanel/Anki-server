@@ -1,5 +1,5 @@
 import { logError } from "../utils/error/error";
-import { DATE_FORMAT, EHttpStatus, getCurrentUser, HttpError } from "../utils";
+import { EHttpStatus, getCurrentUser, HttpError } from "../utils";
 import {
     addCardService,
     createDeckService,
@@ -8,7 +8,7 @@ import {
     searchDecksService,
     updateDeckService,
 } from "../services/deckService";
-import { validateDescription, validateName } from "../models/Deck/validate";
+import { validateDescription, validateName, validateTags } from "../models/Deck/validate";
 import { isValidObjectId } from "mongoose";
 import {
     Body,
@@ -28,10 +28,11 @@ import {
 } from "tsoa";
 import express from "express";
 import { ICardResponse, ICreateCard } from "../models/Card/ICard";
-import { ICreateDeck, IDeckResponse, IQueryDeck } from "../models/Deck/IDeck";
+import { EDeckModelType, ICreateDeck, IDeckResponse, IQueryDeck } from "../models/Deck/IDeck";
 import { IPagination } from "./common/Pagination/IPagination";
 import { formatISO, parse } from "date-fns";
 import { joinDeckService, leaveDeckService } from "../services/userService";
+import { DATE_FORMAT } from "../constant";
 
 @Route("decks")
 @Tags("Deck")
@@ -54,7 +55,7 @@ export class DeckController extends Controller {
 
         try {
             const user = getCurrentUser(request.headers.authorization);
-            const newCard = await addCardService(user.email.valueOf(), deckId, card);
+            const newCard = await addCardService(user.email, deckId, card);
 
             this.setStatus(EHttpStatus.CREATED);
 
@@ -71,15 +72,15 @@ export class DeckController extends Controller {
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
     @SuccessResponse(EHttpStatus.CREATED)
     async createDeck(@Request() request: express.Request, @Body() deck: ICreateDeck): Promise<IDeckResponse> {
-        const { description, name } = deck;
+        const { description, name, tags } = deck;
 
-        if (!validateName(name) || !validateDescription(description)) {
+        if (!validateName(name) || !validateDescription(description) || !validateTags(tags)) {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Deck invalid");
         }
 
         try {
             const user = getCurrentUser(request.headers.authorization);
-            const newDeck = await createDeckService(user.email.valueOf(), deck);
+            const newDeck = await createDeckService(user.email, deck);
             this.setStatus(EHttpStatus.CREATED);
 
             return newDeck;
@@ -101,7 +102,7 @@ export class DeckController extends Controller {
 
         try {
             const user = getCurrentUser(request.headers.authorization);
-            await joinDeckService(user.email.valueOf(), deckId);
+            await joinDeckService(user.email, deckId);
             this.setStatus(EHttpStatus.CREATED);
 
             return;
@@ -123,7 +124,7 @@ export class DeckController extends Controller {
 
         try {
             const user = getCurrentUser(request.headers.authorization);
-            await leaveDeckService(user.email.valueOf(), deckId);
+            await leaveDeckService(user.email, deckId);
             this.setStatus(EHttpStatus.CREATED);
 
             return;
@@ -145,7 +146,7 @@ export class DeckController extends Controller {
         try {
             const user = getCurrentUser(request.headers.authorization);
 
-            return await getDeckService(user.email.valueOf(), deckId);
+            return await getDeckService(user.email, deckId);
         } catch (error) {
             logError(error);
 
@@ -158,9 +159,9 @@ export class DeckController extends Controller {
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
     @SuccessResponse(EHttpStatus.NO_CONTENT)
     async updateDeck(deckId: string, @Body() deck: ICreateDeck, @Request() request: express.Request): Promise<void> {
-        const { name, description, isPrivate } = deck;
+        const { name, description, isPrivate, tags } = deck;
 
-        if (!isValidObjectId(deckId)) {
+        if (!isValidObjectId(deckId) || !validateTags(tags)) {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Deck id invalid");
         }
 
@@ -192,7 +193,7 @@ export class DeckController extends Controller {
 
         try {
             const user = getCurrentUser(request.headers.authorization);
-            await deleteDeckService(user.email.valueOf(), deckId);
+            await deleteDeckService(user.email, deckId);
             this.setStatus(EHttpStatus.NO_CONTENT);
 
             return;
@@ -210,6 +211,8 @@ export class DeckController extends Controller {
         @Query() limit?: number,
         @Query() name?: string,
         @Query() from?: string,
+        @Query() modelType?: EDeckModelType,
+        @Query() tags?: string[],
         @Query() isPrivate?: boolean
     ): Promise<IDeckResponse[]> {
         try {
@@ -218,11 +221,13 @@ export class DeckController extends Controller {
                 from: from ? formatISO(parse(from, DATE_FORMAT, new Date())) : undefined,
                 name,
                 isPrivate,
+                modelType,
+                tags,
             };
 
             const user = getCurrentUser(request.headers.authorization);
 
-            return await searchDecksService(user.email.valueOf(), query, pagination);
+            return await searchDecksService(user.email, query, pagination);
         } catch (error) {
             logError(error);
 

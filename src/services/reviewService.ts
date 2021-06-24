@@ -4,7 +4,14 @@ import Card from "../models/Card";
 import Review from "../models/Review";
 import { EHttpStatus, HttpError } from "../utils";
 import { FilterQuery, LeanDocument, Types } from "mongoose";
-import { ICardReview, IReview, TReviewDocument, TReviewResponse } from "../models/Review/IReview";
+import {
+    ECardReviewLevel,
+    ECardReviewName,
+    ICardReview,
+    IReview,
+    TReviewDocument,
+    TReviewResponse,
+} from "../models/Review/IReview";
 import { isCardReviewable } from "./userService";
 
 export const isCardReviewed = (userEmail: string, cardId: string) =>
@@ -29,11 +36,11 @@ export const getReviews = async (email: string, cards: string[], toReview?: bool
         .then((reviews) => reviews);
 };
 
-export const reviewCardService = async (email: string, id: string, reviewQuality: number) => {
-    const promiseReview = Review.findOne({ card: Types.ObjectId(id), user: email }).exec();
+export const reviewCardService = async (email: string, id: string, reviewQuality: ECardReviewName) => {
+    const promiseReview = Review.findOne({ card: id, user: email }).exec();
     const promiseCard = Card.findById(Types.ObjectId(id)).exec();
 
-    return await Promise.all([promiseCard, promiseReview]).then(async (response) => {
+    return Promise.all([promiseCard, promiseReview]).then(async (response) => {
         const card = response[0];
         const review = response[1] ?? (await createReviewService(email, id));
 
@@ -45,7 +52,7 @@ export const reviewCardService = async (email: string, id: string, reviewQuality
             throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
         }
 
-        const newCardReview = getNextReview(reviewQuality, review);
+        const newCardReview = getNextReview(ECardReviewLevel[reviewQuality], review);
         review.nextReview = newCardReview.nextReview;
         review.lastReview = new Date();
         review.views = newCardReview.views;
@@ -72,7 +79,7 @@ export const createReviewsService = async (email: string, cardIdList: string[]) 
         );
     });
 
-    return await Review.insertMany(reviewList);
+    return Review.insertMany(reviewList);
 };
 
 export const createReviewService = async (email: string, cardId: string) => {
@@ -89,7 +96,7 @@ export const createReviewService = async (email: string, cardId: string) => {
         user: email,
     });
 
-    return await newReview.save();
+    return newReview.save();
 };
 
 /**
@@ -155,8 +162,8 @@ const getCardReviewResponse = (
     id: cardDocument._id,
     user: review.user,
     deck: cardDocument.deck,
-    back: cardDocument.back as String[],
-    front: cardDocument.front as String[],
+    back: cardDocument.back,
+    front: cardDocument.front,
     example: cardDocument.example,
     isReversed: !!cardDocument.referenceCard,
     easeFactor: review.easeFactor,

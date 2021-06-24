@@ -20,7 +20,7 @@ import {
 import { ICardResponse, IQueryCard } from "../models/Card/ICard";
 import { IPaginatedQuery } from "./common/Pagination/IPagination";
 import express from "express";
-import { CARD_REVIEW_LEVEL, IReviewLevel, TReviewResponse } from "../models/Review/IReview";
+import { IReviewLevel, TReviewResponse } from "../models/Review/IReview";
 import { reviewCardService } from "../services/reviewService";
 
 @Route("cards")
@@ -48,7 +48,7 @@ export class CardController extends Controller {
                 name,
             };
 
-            return await searchCardsService(user.email.valueOf(), paginatedCardQuery);
+            return await searchCardsService(user.email, paginatedCardQuery);
         } catch (error) {
             logError(error);
 
@@ -66,7 +66,7 @@ export class CardController extends Controller {
         try {
             const user = getCurrentUser(request.headers.authorization);
 
-            return await getCardService(user.email.valueOf(), cardId);
+            return await getCardService(user.email, cardId);
         } catch (error) {
             logError(error);
 
@@ -91,7 +91,7 @@ export class CardController extends Controller {
 
         try {
             const user = getCurrentUser(request.headers.authorization);
-            await updateCardService(user.email.valueOf(), cardId, front, back, example);
+            await updateCardService(user.email, cardId, front, back, example);
             this.setStatus(EHttpStatus.NO_CONTENT);
 
             return;
@@ -113,7 +113,7 @@ export class CardController extends Controller {
 
         try {
             const user = getCurrentUser(request.headers.authorization);
-            await deleteCardService(user.email.valueOf(), cardId);
+            await deleteCardService(user.email, cardId);
             this.setStatus(EHttpStatus.NO_CONTENT);
 
             return;
@@ -133,16 +133,12 @@ export class CardController extends Controller {
         @Body() body: IReviewLevel,
         @Request() request: express.Request
     ): Promise<TReviewResponse> {
-        const reviewLevel = CARD_REVIEW_LEVEL[body.reviewLevel];
-
-        if (reviewLevel === undefined || !isValidObjectId(cardId)) {
-            throw new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request");
-        }
+        const { reviewLevel } = body;
 
         try {
             const user = getCurrentUser(request.headers.authorization);
 
-            return await reviewCardService(user.email.valueOf(), cardId, reviewLevel);
+            return await reviewCardService(user.email, cardId, reviewLevel);
         } catch (error) {
             logError(error);
 

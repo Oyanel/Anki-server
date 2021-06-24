@@ -1,9 +1,9 @@
 import { Document } from "mongoose";
 
 export interface IProfile {
-    username: String;
-    privateDecks: String[];
-    reviewedDecks: String[];
+    username: string;
+    privateDecks: string[];
+    reviewedDecks: string[];
 }
 
 export type TUserDecks = Pick<IProfile, "privateDecks" | "reviewedDecks">;
@@ -15,8 +15,8 @@ export type TUserDecks = Pick<IProfile, "privateDecks" | "reviewedDecks">;
  * }
  */
 export interface IUserBase {
-    email: String;
-    password: String;
+    email: string;
+    password: string;
 }
 
 /**

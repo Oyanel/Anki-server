@@ -1,5 +1,5 @@
 import { Types, model, Schema } from "mongoose";
-import { validateName, validateDescription } from "./validate";
+import { validateName, validateDescription, validateModelType, validateTags } from "./validate";
 import { TDeckDocument } from "./IDeck";
 import Card from "../Review";
 import User from "../authentication/User";
@@ -9,15 +9,24 @@ const DeckSchema = new Schema<TDeckDocument>(
         name: {
             type: String,
             required: true,
-            validate: { validator: validateName, msg: "Text is too long or incorrect" },
+            validate: { validator: validateName, msg: "Name is incorrect" },
         },
         description: {
             type: String,
-            validate: { validator: validateDescription, msg: "Text is incorrect" },
+            validate: { validator: validateDescription, msg: "Description is incorrect" },
         },
         cards: {
             type: [Types.ObjectId],
             required: true,
+        },
+        modelType: {
+            type: String,
+            required: true,
+            validate: { validator: validateModelType, msg: "The deck model type doesn't exists" },
+        },
+        tags: {
+            type: [String],
+            validate: { validator: validateTags, msg: "Tags are incorrect" },
         },
         isPrivate: {
             type: Boolean,

@@ -12,10 +12,10 @@ export const getDeckCardsService = async (deckId: string) => Card.find({ deck: d
 
 export const createCardService = async (
     email: string,
-    deckId: String,
-    front: String[],
-    back: String[],
-    example: String,
+    deckId: string,
+    front: string[],
+    back: string[],
+    example: string,
     hasReversedCard: boolean
 ) => {
     const promises = [];
@@ -74,9 +74,9 @@ export const getCardService = async (email: string, id: string, overrideSecurity
 export const updateCardService = async (
     email: string,
     id: string,
-    front: String[],
-    back: String[],
-    example: String
+    front: string[],
+    back: string[],
+    example: string
 ) => {
     if (!(await isCardOwned(email, id))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
@@ -134,36 +134,28 @@ export const searchCardsService = async (email: string, query: IPaginatedQuery<I
         .then((cardDocuments) => cardDocuments.map((cardDocument) => getCardResponse(cardDocument)));
 
     if (toReview) {
-        const cardIds = cards.map((card) => card.id.valueOf());
+        const cardIds = cards.map((card) => card.id);
         const cardToReviews = await getReviews(email, cardIds, toReview);
-        const cardIdList = cardToReviews.map((review) => review.card.toString());
-        cards = cards.filter((card) => cardIdList.includes(card.id.valueOf()));
+        const cardIdList = cardToReviews.map((review) => review.card);
+        cards = cards.filter((card) => cardIdList.includes(card.id));
     }
 
     return cards;
 };
 
-const getNewReversedCard = (card: TCardDocument) => {
-    const reservedCard: ICard = {
-        deck: card.deck,
-        front: card.back,
-        back: card.front,
-        example: card.example,
-        referenceCard: card._id,
-    };
+const getNewReversedCard = (card: TCardDocument): ICard => ({
+    deck: card.deck,
+    front: card.back,
+    back: card.front,
+    example: card.example,
+    referenceCard: card._id,
+});
 
-    return reservedCard;
-};
-
-const getCardResponse = (cardDocument: TCardDocument | LeanDocument<TCardDocument>) => {
-    const card: ICardResponse = {
-        id: cardDocument._id,
-        deck: cardDocument.deck,
-        back: cardDocument.back as String[],
-        front: cardDocument.front as String[],
-        example: cardDocument.example,
-        isReversed: Boolean(cardDocument.referenceCard),
-    };
-
-    return card;
-};
+const getCardResponse = (cardDocument: TCardDocument | LeanDocument<TCardDocument>): ICardResponse => ({
+    id: cardDocument._id,
+    deck: cardDocument.deck,
+    back: cardDocument.back,
+    front: cardDocument.front,
+    example: cardDocument.example,
+    isReversed: Boolean(cardDocument.referenceCard),
+});

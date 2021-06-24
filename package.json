@@ -6,7 +6,7 @@
   "scripts": {
     "start": "tsoa spec-and-routes && tsc && node dist/src/app.js",
     "start:dev": "tsoa spec-and-routes && nodemon -L --watch src/ -e ts index.js",
-    "lint": "eslint --ext .ts,.tsx src/**/*.ts",
+    "lint": "eslint --ext .ts src/**/*.ts",
     "compile": "tsc --noEmit",
     "doc": "tsoa spec-and-routes",
     "build": "tsoa spec-and-routes && tsc",

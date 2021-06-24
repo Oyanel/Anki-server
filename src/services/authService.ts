@@ -9,7 +9,7 @@ import { compare } from "bcryptjs";
 import { addHours, addMinutes } from "date-fns";
 import { LeanDocument } from "mongoose";
 
-const saveToken = async (accessToken: String, refreshToken: String, user: TUserResponse) => {
+const saveToken = async (accessToken: string, refreshToken: string, user: TUserResponse) => {
     const tokenModel: IToken = {
         user: user.email,
         accessToken: accessToken,
@@ -27,7 +27,7 @@ const generateToken = async (user: TUserResponse) => {
     const accessToken = sign({ user }, process.env.APP_PRIVATE_TOKEN, { expiresIn: "1h" });
     const refreshToken = sign({ user }, process.env.APP_PUBLIC_TOKEN, { expiresIn: "4h" });
 
-    return await saveToken(accessToken, refreshToken, user);
+    return saveToken(accessToken, refreshToken, user);
 };
 
 export const loginService = async (user: IUserBase) =>
@@ -45,20 +45,16 @@ export const loginService = async (user: IUserBase) =>
                 throw new HttpError(EHttpStatus.UNAUTHORIZED, "Password incorrect.");
             }
 
-            return await generateToken(getUserResponse(userDocument));
+            return generateToken(getUserResponse(userDocument));
         });
 
-export const refreshTokenService = async (refreshToken: String) => {
+export const refreshTokenService = async (refreshToken: string) => {
     const tokenContent = verify(refreshToken, process.env.APP_PUBLIC_TOKEN);
 
-    return await generateToken(tokenContent.user);
+    return generateToken(tokenContent.user);
 };
 
-const getUserResponse = (userDocument: TUserDocument | LeanDocument<TUserDocument>) => {
-    const userResponse: TUserResponse = {
-        profile: userDocument.profile,
-        email: userDocument.email,
-    };
-
-    return userResponse;
-};
+const getUserResponse = (userDocument: TUserDocument | LeanDocument<TUserDocument>): TUserResponse => ({
+    profile: userDocument.profile,
+    email: userDocument.email,
+});

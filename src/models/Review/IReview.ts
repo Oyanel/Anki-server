@@ -1,9 +1,9 @@
-import { Document, Types } from "mongoose";
+import { Document } from "mongoose";
 import { ICardResponse } from "../Card/ICard";
 
 export interface IReview {
-    card: Types.ObjectId;
-    user: String;
+    card: string;
+    user: string;
     lastReview: Date;
     nextReview: Date;
     easeFactor: number;
@@ -20,14 +20,23 @@ export interface ICardReview {
     views: number;
 }
 
-export const CARD_REVIEW_LEVEL = {
-    BLACKOUT: 0,
-    FAILED: 1,
-    CLOSE: 2,
-    HARD: 3,
-    MEDIUM: 4,
-    EASY: 5,
-};
+export enum ECardReviewLevel {
+    BLACKOUT,
+    FAILED,
+    CLOSE,
+    HARD,
+    MEDIUM,
+    EASY,
+}
+
+export enum ECardReviewName {
+    BLACKOUT = "BLACKOUT",
+    FAILED = "FAILED",
+    CLOSE = "CLOSE",
+    HARD = "HARD",
+    MEDIUM = "MEDIUM",
+    EASY = "EASY",
+}
 
 /**
  * @enum {
@@ -43,5 +52,5 @@ export const CARD_REVIEW_LEVEL = {
  * }
  */
 export interface IReviewLevel {
-    reviewLevel: string;
+    reviewLevel: ECardReviewName;
 }
