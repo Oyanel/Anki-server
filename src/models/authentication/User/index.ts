@@ -1,5 +1,5 @@
 import { Schema, model, Types } from "mongoose";
-import { validateEmail } from "./validate";
+import { validateEmail, validatePassword } from "./validate";
 import { TUserDocument } from "./IUser";
 
 const UserSchema = new Schema<TUserDocument>(
@@ -13,6 +13,7 @@ const UserSchema = new Schema<TUserDocument>(
         password: {
             type: String,
             required: true,
+            validate: { validator: validatePassword, msg: "Invalid password" },
         },
         profile: {
             username: String,

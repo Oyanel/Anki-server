@@ -1,9 +1,9 @@
 import { IUserBase, IUserRegistration } from "../models/authentication/User";
 import { loginService, refreshTokenService } from "../services/authService";
-import { isEmail, isJWT, isStrongPassword } from "validator";
+import { isEmail, isJWT } from "validator";
 import { logError } from "../utils/error/error";
 import { EHttpStatus, HttpError } from "../utils";
-import { validateUsername } from "../models/authentication/User/validate";
+import { validatePassword, validateUsername } from "../models/authentication/User/validate";
 import { registerService } from "../services/userService";
 import { Body, Controller, Post, Response, Route, SuccessResponse, Tags } from "tsoa";
 import { IToken } from "../models/authentication/Token";
@@ -28,7 +28,7 @@ export class AuthController extends Controller {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Email invalid");
         }
 
-        if (!isStrongPassword(password)) {
+        if (!validatePassword(password)) {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Password invalid");
         }
 

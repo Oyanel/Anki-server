@@ -8,3 +8,7 @@ export const validateEmail = (email: string) => {
 export const validateUsername = (text: string) => {
     return textRegex.test(text) && text.length <= 50;
 };
+
+export const validatePassword = (password: string) => {
+    return password.length >= 6;
+};
