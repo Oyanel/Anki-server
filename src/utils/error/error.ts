@@ -7,7 +7,7 @@ export const sendError = (res: Response, error: HttpError) => {
     const originalError = { ...error };
     logger.error(error);
 
-    return res.json({ error: originalError });
+    return res.json(originalError);
 };
 
 export const logError = (error: Error) => {

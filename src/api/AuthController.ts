@@ -51,7 +51,7 @@ export class AuthController extends Controller {
     @Post("/token/refresh")
     @Response<HttpError>(EHttpStatus.BAD_REQUEST)
     public async refreshToken(@Body() token: { token: string }): Promise<IToken> {
-        if (!isJWT(token)) {
+        if (!isJWT(token.token)) {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request");
         }
 

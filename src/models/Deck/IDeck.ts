@@ -3,7 +3,7 @@ import { Document } from "mongoose";
 export enum EDeckModelType {
     BASIC = "BASIC",
     KANJI = "KANJI",
-    COMMON = "COMMON",
+    FREE = "FREE",
 }
 
 /**

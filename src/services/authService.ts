@@ -4,7 +4,7 @@ import { sign, verify } from "jsonwebtoken";
 import "dotenv";
 import { EHttpStatus, HttpError } from "../utils";
 import { compare } from "bcryptjs";
-import { addHours, addMinutes } from "date-fns";
+import { addMinutes, addMonths } from "date-fns";
 import { LeanDocument } from "mongoose";
 
 const saveToken = async (accessToken: string, refreshToken: string, user: TUserResponse) => {
@@ -13,7 +13,7 @@ const saveToken = async (accessToken: string, refreshToken: string, user: TUserR
         accessToken: accessToken,
         refreshToken: refreshToken,
         accessTokenExpiresAt: addMinutes(new Date(), 60),
-        refreshTokenExpiresAt: addHours(new Date(), 4),
+        refreshTokenExpiresAt: addMonths(new Date(), 3),
     };
 
     await Token.findOneAndReplace({ user: user.email }, tokenModel, { upsert: true }).lean().exec();
@@ -23,7 +23,7 @@ const saveToken = async (accessToken: string, refreshToken: string, user: TUserR
 
 const generateToken = async (user: TUserResponse) => {
     const accessToken = sign({ user }, process.env.APP_PRIVATE_TOKEN, { expiresIn: "1h" });
-    const refreshToken = sign({ user }, process.env.APP_PUBLIC_TOKEN, { expiresIn: "4h" });
+    const refreshToken = sign({ user }, process.env.APP_PUBLIC_TOKEN, { expiresIn: "12w" });
 
     return saveToken(accessToken, refreshToken, user);
 };

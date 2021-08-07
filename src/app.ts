@@ -3,7 +3,7 @@ import express, { NextFunction, Request, Response } from "express";
 import loaders from "./loaders";
 import { RegisterRoutes } from "./routes";
 import { EHttpStatus, HttpError } from "./utils";
-import { sendError } from "./utils/error/error";
+import { logError, sendError } from "./utils/error/error";
 import { ValidateError } from "tsoa";
 
 async function startServer() {
@@ -25,6 +25,7 @@ async function startServer() {
             }
 
             if (err instanceof ValidateError) {
+                logError(err);
                 const error = new HttpError(EHttpStatus.BAD_REQUEST, "Invalid parameters");
 
                 return sendError(res, error);
