@@ -141,12 +141,16 @@ export const searchDecksService = async (email: string, query: IQueryDeck, pagin
     const { privateDecks } = await getUserDecks(email);
     const isPrivateDeckCondition = { _id: { $in: privateDecks } };
     const { isPrivate, name, from, tags, modelType } = query;
-    const orCondition: FilterQuery<IDeck> = [{ isPrivate: isPrivate ?? false }];
+    let conditionOperator = "$or";
+    const privateCondition: FilterQuery<IDeck> = [{ isPrivate: isPrivate ?? false }];
     if (isPrivate || isPrivate === undefined) {
-        orCondition.push(isPrivateDeckCondition);
+        privateCondition.push(isPrivateDeckCondition);
+    }
+    if (isPrivate) {
+        conditionOperator = "$and";
     }
     const condition = {
-        $or: orCondition,
+        [conditionOperator]: privateCondition,
         isPrivate: isPrivate ? true : undefined,
         name: { $regex: new RegExp(name ?? "", "i") },
         createdAt: from ? { $gt: from } : undefined,
