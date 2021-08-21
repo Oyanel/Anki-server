@@ -1,10 +1,14 @@
-import User, { IProfile, IUser, IUserRegistration, TUserDecks } from "../models/authentication/User";
-import { EHttpStatus, HttpError } from "../utils";
+import User, { EOTPReason, IProfile, IUser, IUserRegistration, TUserDecks } from "../models/authentication/User";
+import Code from "../models/authentication/Otp";
+import { EHttpStatus, HttpError, sendEmail } from "../utils";
 import { SALT_ROUND } from "../constant";
 import { hashSync } from "bcryptjs";
 import { isDeckAccessible, isDeckExisting } from "./deckService";
 import { createReviewsService } from "./reviewService";
 import { getCardService, getDeckCardsService } from "./cardService";
+import { addMinutes, isBefore } from "date-fns";
+import { logError } from "../utils/error/error";
+import { changePasswordTemplate } from "../utils/email/changePasswordTemplate";
 
 const isUserExisting = (email: string) => User.countDocuments({ email }).then((count) => count > 0);
 
@@ -36,6 +40,50 @@ export const registerService = async (user: IUserRegistration) => {
 
     const profile = createProfile(user.username);
     await User.create<IUser>({ email: user.email, profile, password: user.password });
+};
+
+export const changeLostPassword = async (code: number, password: string) => {
+    await Code.findOne({ code })
+        .exec()
+        .then(async (codeDocument) => {
+            if (!codeDocument) {
+                throw new HttpError(EHttpStatus.NOT_FOUND, "Code not found");
+            }
+
+            if (isBefore(new Date(codeDocument.expiresAt), new Date())) {
+                throw new HttpError(EHttpStatus.BAD_REQUEST, "Code expired");
+            }
+
+            await User.findOne({ email: codeDocument.user })
+                .exec()
+                .then(async (userDocument) => {
+                    userDocument.password = hashSync(password, SALT_ROUND);
+                    await userDocument.save();
+                });
+
+            await codeDocument.remove();
+        });
+};
+
+export const createOTP = async (email: string, reason: EOTPReason) => {
+    const code = Math.floor(100000 + Math.random() * 900000);
+
+    try {
+        await Code.findOneAndReplace(
+            { user: email },
+            { user: email, code, expiresAt: addMinutes(new Date(), 15) },
+            { upsert: true }
+        )
+            .lean()
+            .exec();
+        if (reason === EOTPReason.CHANGE_PASSWORD) {
+            await sendEmail([email], "changePassword", changePasswordTemplate(email, code));
+        }
+    } catch (error) {
+        logError(error);
+
+        throw new HttpError(EHttpStatus.INTERNAL_ERROR, "Error occurred while creating the OTP");
+    }
 };
 
 export const joinDeckService = async (email: string, deckId: string) => {

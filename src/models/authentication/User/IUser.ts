@@ -21,6 +21,28 @@ export interface IUserBase {
 
 /**
  * @example {
+ *  "code": "1234",
+ *  "password": "LfasefSLEFs2d*"
+ * }
+ */
+export interface IChangeLostPassword {
+    code: number;
+    password: string;
+}
+
+/**
+ * @example {
+ *  "email": "user.test@test.com",
+ *  "reason": "CHANGE_PASSWORD"
+ * }
+ */
+export interface IOtpRequest {
+    email: string;
+    reason: EOTPReason;
+}
+
+/**
+ * @example {
  *  "email": "user.test@test.com",
  *  "password": "LfasefSLEFs2d*"
  *  "username": "Johnny"
@@ -32,6 +54,10 @@ export interface IUserRegistration extends IUserBase {
 
 export interface IUser extends IUserBase {
     profile: IProfile;
+}
+
+export enum EOTPReason {
+    CHANGE_PASSWORD = "CHANGE_PASSWORD",
 }
 
 export type TUserResponse = Omit<IUser, "password">;
