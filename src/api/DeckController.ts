@@ -28,7 +28,7 @@ import {
 } from "tsoa";
 import express from "express";
 import { ICardResponse, ICreateCard } from "../models/Card";
-import { EDeckModelType, ICreateDeck, IDeckResponse, IQueryDeck } from "../models/Deck";
+import { EDeckModelType, ICreateDeck, IDeckResponse, IDeckSummaryResponse, IQueryDeck } from "../models/Deck";
 import { IPagination } from "./common/Pagination/IPagination";
 import { formatISO, parse } from "date-fns";
 import { joinDeckService, leaveDeckService } from "../services/userService";
@@ -71,7 +71,7 @@ export class DeckController extends Controller {
     @Response<HttpError>(EHttpStatus.NOT_FOUND)
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
     @SuccessResponse(EHttpStatus.CREATED)
-    async createDeck(@Request() request: express.Request, @Body() deck: ICreateDeck): Promise<IDeckResponse> {
+    async createDeck(@Request() request: express.Request, @Body() deck: ICreateDeck): Promise<IDeckSummaryResponse> {
         const { description, name, tags } = deck;
 
         if (!validateName(name) || !validateDescription(description) || !validateTags(tags)) {
@@ -138,7 +138,11 @@ export class DeckController extends Controller {
     @Get("{deckId}")
     @Response<HttpError>(EHttpStatus.NOT_FOUND)
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
-    async getDeck(deckId: string, @Request() request: express.Request): Promise<IDeckResponse> {
+    async getDeck(
+        @Request() request: express.Request,
+        @Path() deckId: string,
+        @Query() skip: number
+    ): Promise<IDeckResponse> {
         if (!isValidObjectId(deckId)) {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request");
         }
@@ -146,7 +150,7 @@ export class DeckController extends Controller {
         try {
             const user = getCurrentUser(request.headers.authorization);
 
-            return await getDeckService(user.email, deckId);
+            return await getDeckService(user.email, deckId, skip);
         } catch (error) {
             logError(error);
 
@@ -214,7 +218,7 @@ export class DeckController extends Controller {
         @Query() modelType?: EDeckModelType,
         @Query() tags?: string[],
         @Query() isPrivate?: boolean
-    ): Promise<IDeckResponse[]> {
+    ): Promise<IDeckSummaryResponse[]> {
         try {
             const pagination: IPagination = { skip: skip ?? 0, limit: limit ?? 10 };
             const query: IQueryDeck = {

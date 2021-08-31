@@ -109,7 +109,7 @@ export const deleteCardService = async (email: string, cardId: string) =>
 
 export const searchCardsService = async (email: string, query: IPaginatedQuery<IQueryCard>) => {
     const { privateDecks, reviewedDecks } = await getUserDecks(email);
-    const { name, reverse, toReview, limit, skip } = query;
+    const { ids, name, deck, reverse, toReview, limit, skip } = query;
     const nameCondition = { $in: new RegExp(name ?? "", "i") };
     let reverseCondition;
 
@@ -118,28 +118,38 @@ export const searchCardsService = async (email: string, query: IPaginatedQuery<I
     }
 
     const conditions = {
-        deck: { $in: privateDecks.concat(reviewedDecks) },
+        _id: ids.length ? { $in: ids } : undefined,
+        deck: deck ?? { $in: privateDecks.concat(reviewedDecks) },
         $or: [{ front: nameCondition }, { back: nameCondition }],
         referenceCard: reverseCondition,
     };
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    let cards = await Card.find(conditions)
+    return await Card.find(conditions)
         .skip(skip)
         .limit(limit)
         .lean()
         .exec()
-        .then((cardDocuments) => cardDocuments.map((cardDocument) => getCardResponse(cardDocument)));
+        .then(async (cardDocuments) => {
+            if (!cardDocuments) {
+                return [];
+            }
+            const cardIds = cardDocuments.map((cardDocument) => cardDocument._id);
+            const cardToReviews = await getReviews(email, cardIds, toReview);
+            const cardIdToReviewList = cardToReviews.map((review) => review.card);
+            const cards = cardDocuments.map((cardDocument) => {
+                const isToReview = cardIdToReviewList.includes(cardDocument._id);
 
-    if (toReview) {
-        const cardIds = cards.map((card) => card.id);
-        const cardToReviews = await getReviews(email, cardIds, toReview);
-        const cardIdList = cardToReviews.map((review) => review.card);
-        cards = cards.filter((card) => cardIdList.includes(card.id));
-    }
+                return getCardResponse(cardDocument, isToReview);
+            });
 
-    return cards;
+            if (toReview) {
+                return cards.filter((card) => card.toReview);
+            }
+
+            return cards;
+        });
 };
 
 const getNewReversedCard = (card: TCardDocument): ICard => ({
@@ -150,11 +160,15 @@ const getNewReversedCard = (card: TCardDocument): ICard => ({
     referenceCard: card._id,
 });
 
-const getCardResponse = (cardDocument: TCardDocument | LeanDocument<TCardDocument>): ICardResponse => ({
+const getCardResponse = (
+    cardDocument: TCardDocument | LeanDocument<TCardDocument>,
+    toReview?: boolean
+): ICardResponse => ({
     id: cardDocument._id,
     deck: cardDocument.deck,
     back: cardDocument.back,
     front: cardDocument.front,
     example: cardDocument.example,
-    isReversed: Boolean(cardDocument.referenceCard),
+    referenceCard: cardDocument.referenceCard,
+    toReview,
 });

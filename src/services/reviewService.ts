@@ -160,7 +160,7 @@ const getCardReviewResponse = (
     back: cardDocument.back,
     front: cardDocument.front,
     example: cardDocument.example,
-    isReversed: !!cardDocument.referenceCard,
+    referenceCard: cardDocument.referenceCard,
     easeFactor: review.easeFactor,
     lastReview: review.lastReview,
     nextReview: review.nextReview,

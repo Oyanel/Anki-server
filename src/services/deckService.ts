@@ -1,11 +1,18 @@
-import Deck, { ICreateDeck, IDeck, IDeckResponse, IQueryDeck, TDeckDocument } from "../models/Deck";
+import Deck, {
+    ICreateDeck,
+    IDeck,
+    IDeckResponse,
+    IDeckSummaryResponse,
+    IQueryDeck,
+    TDeckDocument,
+} from "../models/Deck";
 import { EHttpStatus, HttpError } from "../utils";
-import { createCardService } from "./cardService";
+import { createCardService, searchCardsService } from "./cardService";
 import { FilterQuery, LeanDocument, Types } from "mongoose";
 import { addDeckToProfile, getUserDecks, isDeckOwned } from "./userService";
-import { IPagination } from "../api/common/Pagination/IPagination";
+import { IPaginatedQuery, IPagination } from "../api/common/Pagination/IPagination";
 import { TUserResponse } from "../models/authentication/User";
-import { ICreateCard } from "../models/Card";
+import { ICardResponse, ICreateCard, IQueryCard } from "../models/Card";
 
 export const isDeckExisting = async (deckId: string) =>
     Deck.countDocuments({ _id: Types.ObjectId(deckId) }).then((count) => count > 0);
@@ -73,14 +80,14 @@ export const createDeckService = async (userEmail: string, deckQuery: ICreateDec
         isPrivate: isPrivate ?? true,
     };
 
-    const deck = await Deck.create<IDeck>(newDeck).then((deckDocument) => getDeckResponse(deckDocument));
+    const deck = await Deck.create<IDeck>(newDeck).then((deckDocument) => getDeckSummaryResponse(deckDocument));
 
     await addDeckToProfile(deck.id, userEmail);
 
     return deck;
 };
 
-export const getDeckService = async (email: string, id: string) => {
+export const getDeckService = async (email: string, id: string, skip) => {
     if (!(await isDeckAccessible(email, id))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
@@ -88,12 +95,22 @@ export const getDeckService = async (email: string, id: string) => {
     return Deck.findById(Types.ObjectId(id))
         .lean()
         .exec()
-        .then((deckDocument) => {
+        .then(async (deckDocument) => {
             if (!deckDocument) {
                 throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
             }
 
-            return getDeckResponse(deckDocument);
+            const paginatedCardQuery: IPaginatedQuery<IQueryCard> = {
+                ids: deckDocument.cards,
+                deck: deckDocument._id,
+                reverse: false,
+                limit: 50,
+                skip,
+            };
+
+            const cards = await searchCardsService(email, paginatedCardQuery);
+
+            return getDeckResponse(deckDocument, cards);
         });
 };
 
@@ -166,11 +183,11 @@ export const searchDecksService = async (email: string, query: IQueryDeck, pagin
         .lean()
         .exec()
         .then((decks) => {
-            return decks.map((deckDocument) => getDeckResponse(deckDocument));
+            return decks.map((deckDocument) => getDeckSummaryResponse(deckDocument));
         });
 };
 
-const getDeckResponse = (deckDocument: TDeckDocument | LeanDocument<TDeckDocument>): IDeckResponse => ({
+const getDeckSummaryResponse = (deckDocument: TDeckDocument | LeanDocument<TDeckDocument>): IDeckSummaryResponse => ({
     id: deckDocument._id,
     modelType: deckDocument.modelType,
     name: deckDocument.name,
@@ -179,3 +196,18 @@ const getDeckResponse = (deckDocument: TDeckDocument | LeanDocument<TDeckDocumen
     cards: deckDocument.cards,
     isPrivate: deckDocument.isPrivate,
 });
+
+const getDeckResponse = (
+    deckDocument: TDeckDocument | LeanDocument<TDeckDocument>,
+    cards: ICardResponse[]
+): IDeckResponse => {
+    return {
+        id: deckDocument._id,
+        modelType: deckDocument.modelType,
+        name: deckDocument.name,
+        description: deckDocument.description,
+        tags: deckDocument.tags,
+        cards: cards,
+        isPrivate: deckDocument.isPrivate,
+    };
+};

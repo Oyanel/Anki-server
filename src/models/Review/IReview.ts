@@ -1,5 +1,5 @@
 import { Document } from "mongoose";
-import { ICardResponse } from "../Card/ICard";
+import { ICardResponse } from "../Card";
 
 export interface IReview {
     card: string;

@@ -14,25 +14,26 @@ export interface ICard {
  *     "front": ["こんいしはあ"],
  *     "back": ["Bonjour"],
  *     "example": "こんにちはみなさん、げんきですか。"
- *     "isReversed": false
+ *     "referenceCard": 123
  * }
  */
-export interface ICardResponse extends Omit<ICard, "referenceCard"> {
+export interface ICardResponse extends ICard {
     id: string;
-    isReversed: boolean;
+    toReview?: boolean;
 }
 
 export type TCardDocument = ICard & Document;
 
 export interface IQueryCard {
+    ids?: string[];
     name?: string;
     toReview?: boolean;
     reverse?: boolean;
+    deck?: string;
 }
 
 /**
  * @example {
- *     "deck": "123",
  *     "front": ["こんいしは"],
  *     "back": ["Bonjour"],
  *     "example": "こんにちはみなさん、げんきですか。",
@@ -40,7 +41,6 @@ export interface IQueryCard {
  * }
  */
 export interface ICreateCard {
-    deck: string;
     front: string[];
     back: string[];
     reverseCard?: boolean;

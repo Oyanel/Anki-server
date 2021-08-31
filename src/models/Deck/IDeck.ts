@@ -1,4 +1,5 @@
 import { Document } from "mongoose";
+import { ICardResponse } from "../Card";
 
 export enum EDeckModelType {
     BASIC = "BASIC",
@@ -35,8 +36,29 @@ export interface IDeck {
  *     "tags": ["Information", "Daily life"],
  * }
  */
-export interface IDeckResponse extends IDeck {
+export interface IDeckSummaryResponse extends IDeck {
     id: string;
+}
+
+/**
+ * @example {
+ *     "id": "123d1",
+ *     "name": "Directions",
+ *     "description": "How to give directions to someone",
+ *     "isPrivate": true,
+ *     "modelType": "BASIC",
+ *     "tags": ["Information", "Daily life"],
+ *     "cards": {
+ *          "id": "123d1",
+ *          "front": ["こんいしはあ"],
+ *          "back": ["Bonjour"],
+ *          "example": "こんにちはみなさん、げんきですか。"
+ *          "isReversed": false
+ *      }
+ * }
+ */
+export interface IDeckResponse extends Omit<IDeckSummaryResponse, "cards"> {
+    cards: ICardResponse[];
 }
 
 export interface IQueryDeck {
