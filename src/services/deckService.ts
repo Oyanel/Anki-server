@@ -44,7 +44,7 @@ export const isCardOwned = async (email: string, cardId: string) => {
 };
 
 export const addCardService = async (email: string, deckId: string, card: ICreateCard) => {
-    const { front, back, example, reverseCard } = card;
+    const { front, back, example, reverseCard, type } = card;
     if (!(await isDeckExisting(deckId))) {
         throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
     }
@@ -53,7 +53,7 @@ export const addCardService = async (email: string, deckId: string, card: ICreat
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
-    const cards = await createCardService(email, deckId, front, back, example, reverseCard);
+    const cards = await createCardService(email, deckId, front, back, example, reverseCard, type);
     const cardId = cards[0].id;
 
     await Deck.findOne({ _id: Types.ObjectId(deckId) })
@@ -70,10 +70,9 @@ export const addCardService = async (email: string, deckId: string, card: ICreat
 };
 
 export const createDeckService = async (userEmail: string, deckQuery: ICreateDeck) => {
-    const { isPrivate, name, description, modelType, tags } = deckQuery;
+    const { isPrivate, name, description, tags } = deckQuery;
     const newDeck: IDeck = {
         name,
-        modelType,
         description,
         tags,
         cards: [],
@@ -157,7 +156,7 @@ export const deleteDeckService = async (userEmail: string, id: string) =>
 export const searchDecksService = async (email: string, query: IQueryDeck, pagination: IPagination) => {
     const { privateDecks } = await getUserDecks(email);
     const isPrivateDeckCondition = { _id: { $in: privateDecks } };
-    const { isPrivate, name, from, tags, modelType } = query;
+    const { isPrivate, name, from, tags } = query;
     let conditionOperator = "$or";
     const privateCondition: FilterQuery<IDeck> = [{ isPrivate: isPrivate ?? false }];
     if (isPrivate || isPrivate === undefined) {
@@ -172,7 +171,6 @@ export const searchDecksService = async (email: string, query: IQueryDeck, pagin
         name: { $regex: new RegExp(name ?? "", "i") },
         createdAt: from ? { $gt: from } : undefined,
         tags: tags ? { $in: tags } : undefined,
-        modelType,
     };
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -189,7 +187,6 @@ export const searchDecksService = async (email: string, query: IQueryDeck, pagin
 
 const getDeckSummaryResponse = (deckDocument: TDeckDocument | LeanDocument<TDeckDocument>): IDeckSummaryResponse => ({
     id: deckDocument._id,
-    modelType: deckDocument.modelType,
     name: deckDocument.name,
     description: deckDocument.description,
     tags: deckDocument.tags,
@@ -203,7 +200,6 @@ const getDeckResponse = (
 ): IDeckResponse => {
     return {
         id: deckDocument._id,
-        modelType: deckDocument.modelType,
         name: deckDocument.name,
         description: deckDocument.description,
         tags: deckDocument.tags,

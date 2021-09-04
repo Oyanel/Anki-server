@@ -2,7 +2,7 @@ import { Schema, model, Types } from "mongoose";
 import { TCardDocument } from "./ICard";
 import Deck from "../Deck";
 import Review from "../Review";
-import { validateExample } from "./validate";
+import { validateExample, validateType } from "./validate";
 
 const CardSchema = new Schema<TCardDocument>({
     deck: {
@@ -23,6 +23,10 @@ const CardSchema = new Schema<TCardDocument>({
     },
     referenceCard: {
         type: Types.ObjectId,
+    },
+    type: {
+        type: String,
+        validate: { validator: validateType, msg: "Type is not correct" },
     },
 });
 

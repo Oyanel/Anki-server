@@ -28,7 +28,7 @@ import {
 } from "tsoa";
 import express from "express";
 import { ICardResponse, ICreateCard } from "../models/Card";
-import { EDeckModelType, ICreateDeck, IDeckResponse, IDeckSummaryResponse, IQueryDeck } from "../models/Deck";
+import { ICreateDeck, IDeckResponse, IDeckSummaryResponse, IQueryDeck } from "../models/Deck";
 import { IPagination } from "./common/Pagination/IPagination";
 import { formatISO, parse } from "date-fns";
 import { joinDeckService, leaveDeckService } from "../services/userService";
@@ -215,7 +215,6 @@ export class DeckController extends Controller {
         @Query() limit?: number,
         @Query() name?: string,
         @Query() from?: string,
-        @Query() modelType?: EDeckModelType,
         @Query() tags?: string[],
         @Query() isPrivate?: boolean
     ): Promise<IDeckSummaryResponse[]> {
@@ -225,7 +224,6 @@ export class DeckController extends Controller {
                 from: from ? formatISO(parse(from, DATE_FORMAT, new Date())) : undefined,
                 name,
                 isPrivate,
-                modelType,
                 tags,
             };
 

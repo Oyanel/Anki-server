@@ -1,5 +1,4 @@
 import { textRegex } from "../../utils/validation/regex";
-import { EDeckModelType } from "./IDeck";
 
 export const validateName = (text: string) => {
     return textRegex.test(text) && text.length <= 50;
@@ -7,10 +6,6 @@ export const validateName = (text: string) => {
 
 export const validateDescription = (text: string) => {
     return textRegex.test(text);
-};
-
-export const validateModelType = (modelType: string) => {
-    return EDeckModelType[modelType] !== undefined;
 };
 
 export const validateTags = (tags: string[]) => {

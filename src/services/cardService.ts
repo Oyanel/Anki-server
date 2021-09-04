@@ -1,4 +1,4 @@
-import Card, { ICard, ICardResponse, IQueryCard, TCardDocument } from "../models/Card";
+import Card, { ECardType, ICard, ICardResponse, IQueryCard, TCardDocument } from "../models/Card";
 import { EHttpStatus, HttpError } from "../utils";
 import { LeanDocument, Types } from "mongoose";
 import { isCardOwned } from "./deckService";
@@ -15,7 +15,8 @@ export const createCardService = async (
     front: string[],
     back: string[],
     example: string,
-    hasReversedCard: boolean
+    hasReversedCard: boolean,
+    type: ECardType
 ) => {
     const promises = [];
     const cards = [];
@@ -26,6 +27,7 @@ export const createCardService = async (
             back,
             front,
             example,
+            type,
         });
         const newCard = await cardDocument.save();
         cards.push(getCardResponse(newCard));
@@ -158,6 +160,7 @@ const getNewReversedCard = (card: TCardDocument): ICard => ({
     back: card.front,
     example: card.example,
     referenceCard: card._id,
+    type: card.type,
 });
 
 const getCardResponse = (
@@ -169,6 +172,7 @@ const getCardResponse = (
     back: cardDocument.back,
     front: cardDocument.front,
     example: cardDocument.example,
+    type: cardDocument.type,
     referenceCard: cardDocument.referenceCard,
     toReview,
 });

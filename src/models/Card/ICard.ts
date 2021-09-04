@@ -1,10 +1,16 @@
 import { Document } from "mongoose";
 
+export enum ECardType {
+    TEXT = "TEXT",
+    IMAGE = "IMAGE",
+}
+
 export interface ICard {
     deck: string;
     front: string[];
     back: string[];
     example: string;
+    type: ECardType;
     referenceCard?: string;
 }
 
@@ -36,6 +42,7 @@ export interface IQueryCard {
  * @example {
  *     "front": ["こんいしは"],
  *     "back": ["Bonjour"],
+ *     "type": "TEXT",
  *     "example": "こんにちはみなさん、げんきですか。",
  *     "reverseCard": true
  * }
@@ -43,6 +50,7 @@ export interface IQueryCard {
 export interface ICreateCard {
     front: string[];
     back: string[];
+    type: ECardType;
     reverseCard?: boolean;
     example?: string;
 }

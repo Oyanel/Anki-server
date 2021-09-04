@@ -1,18 +1,11 @@
 import { Document } from "mongoose";
 import { ICardResponse } from "../Card";
 
-export enum EDeckModelType {
-    BASIC = "BASIC",
-    KANJI = "KANJI",
-    FREE = "FREE",
-}
-
 /**
  * @example {
  *     "name": "Directions",
  *     "description": "How to give directions to someone",
  *     "isPrivate": true,
- *     "modelType": "BASIC",
  *     "tags": ["Information", "Daily life"],
  *     "cards": ["123d1"]
  * }
@@ -20,7 +13,6 @@ export enum EDeckModelType {
 export interface IDeck {
     name: string;
     description: string;
-    modelType: EDeckModelType;
     tags: string[];
     isPrivate: boolean;
     cards: string[];
@@ -32,7 +24,6 @@ export interface IDeck {
  *     "name": "Directions",
  *     "description": "How to give directions to someone",
  *     "isPrivate": true,
- *     "modelType": "BASIC",
  *     "tags": ["Information", "Daily life"],
  * }
  */
@@ -46,7 +37,6 @@ export interface IDeckSummaryResponse extends IDeck {
  *     "name": "Directions",
  *     "description": "How to give directions to someone",
  *     "isPrivate": true,
- *     "modelType": "BASIC",
  *     "tags": ["Information", "Daily life"],
  *     "cards": {
  *          "id": "123d1",
@@ -65,7 +55,6 @@ export interface IQueryDeck {
     name?: string;
     from?: string;
     tags?: string[];
-    modelType?: EDeckModelType;
     isPrivate?: boolean;
 }
 
@@ -74,13 +63,11 @@ export interface IQueryDeck {
  *     "name": "Directions",
  *     "description": "How to give directions to someone",
  *     "isPrivate": true,
- *     "modelType": "BASIC",
  *     "tags": ["Information", "Daily life"],
  * }
  */
 export interface ICreateDeck {
     name: string;
-    modelType: EDeckModelType;
     description: string;
     tags: string[];
     isPrivate?: boolean;
