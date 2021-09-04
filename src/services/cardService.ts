@@ -124,9 +124,9 @@ export const searchCardsService = async (email: string, query: IPaginatedQuery<I
     }
 
     const conditions = {
-        _id: ids.length ? { $in: ids } : undefined,
+        _id: ids?.length ? { $in: ids } : undefined,
         deck: deck ?? { $in: privateDecks.concat(reviewedDecks) },
-        $or: [{ front: nameCondition }, { back: nameCondition }],
+        $or: [{ front: nameCondition }, { back: nameCondition }, { example: nameCondition }],
         referenceCard: reverseCondition,
     };
 

@@ -43,7 +43,6 @@ export class DeckController extends Controller {
     @Post("{deckId}/add")
     @Response<HttpError>(EHttpStatus.NOT_FOUND)
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
-    @SuccessResponse(EHttpStatus.CREATED)
     async addCard(
         deckId: string,
         @Request() request: express.Request,
@@ -70,7 +69,7 @@ export class DeckController extends Controller {
     @Post()
     @Response<HttpError>(EHttpStatus.NOT_FOUND)
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
-    @SuccessResponse(EHttpStatus.CREATED)
+    @SuccessResponse(EHttpStatus.OK)
     async createDeck(@Request() request: express.Request, @Body() deck: ICreateDeck): Promise<IDeckSummaryResponse> {
         const { description, name, tags } = deck;
 
@@ -82,6 +81,8 @@ export class DeckController extends Controller {
             const user = getCurrentUser(request.headers.authorization);
             const newDeck = await createDeckService(user.email, deck);
             this.setStatus(EHttpStatus.CREATED);
+
+            this.setStatus(200);
 
             return newDeck;
         } catch (error) {
