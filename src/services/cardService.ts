@@ -83,6 +83,10 @@ export const updateCardService = async (
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
+    if (!front.some((field) => field) && !back.some((field) => field)) {
+        throw new HttpError(EHttpStatus.BAD_REQUEST, "The front and back fields cannot be empty");
+    }
+
     Card.findById(Types.ObjectId(id))
         .exec()
         .then(async (cardDocument) => {

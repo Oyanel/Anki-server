@@ -53,6 +53,10 @@ export const addCardService = async (email: string, deckId: string, card: ICreat
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
+    if (!front.some((field) => field) && !back.some((field) => field)) {
+        throw new HttpError(EHttpStatus.BAD_REQUEST, "The front and back fields cannot be empty");
+    }
+
     const cards = await createCardService(email, deckId, front, back, example, reverseCard, type);
     const cardId = cards[0].id;
 
