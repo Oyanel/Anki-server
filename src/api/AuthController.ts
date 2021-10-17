@@ -28,12 +28,8 @@ export class AuthController extends Controller {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Email invalid");
         }
 
-        if (!validatePassword(password)) {
-            throw new HttpError(EHttpStatus.BAD_REQUEST, "Password invalid");
-        }
-
-        if (!validateUsername(username)) {
-            throw new HttpError(EHttpStatus.BAD_REQUEST, "Username incorrect");
+        if (!validatePassword(password) || !validateUsername(username)) {
+            throw new HttpError(EHttpStatus.BAD_REQUEST, "Username or password incorrect");
         }
 
         try {

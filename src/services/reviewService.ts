@@ -157,6 +157,8 @@ const getCardReviewResponse = (
     id: cardDocument._id,
     user: review.user,
     deck: cardDocument.deck,
+    toReview: false,
+    type: cardDocument.type,
     back: cardDocument.back,
     front: cardDocument.front,
     example: cardDocument.example,

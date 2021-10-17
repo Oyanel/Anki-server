@@ -142,10 +142,10 @@ export const searchCardsService = async (email: string, query: IPaginatedQuery<I
                 return [];
             }
             const cardIds = cardDocuments.map((cardDocument) => cardDocument._id);
-            const cardToReviews = await getReviews(email, cardIds, toReview);
-            const cardIdToReviewList = cardToReviews.map((review) => review.card);
+            const cardsToReview = await getReviews(email, cardIds, toReview);
+            const cardIdToReviewList = cardsToReview.map((review) => review.card.toString());
             const cards = cardDocuments.map((cardDocument) => {
-                const isToReview = cardIdToReviewList.includes(cardDocument._id);
+                const isToReview = cardIdToReviewList.includes(cardDocument._id.toString());
 
                 return getCardResponse(cardDocument, isToReview);
             });
