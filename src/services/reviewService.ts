@@ -28,7 +28,8 @@ export const getReviews = async (email: string, cards: string[], toReview?: bool
         nextReview: nextReviewCondition,
     };
 
-    return Review.find(condition)
+    return Review.find()
+        .where(condition)
         .lean()
         .exec()
         .then((reviews) => reviews);

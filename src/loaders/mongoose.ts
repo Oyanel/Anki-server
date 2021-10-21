@@ -6,7 +6,6 @@ export const mongooseInit = () => {
         connect(
             `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PWD}@${process.env.MONGO_URL}/${process.env.DATABASE_NAME}`,
             {
-                useNewUrlParser: true,
                 ignoreUndefined: true,
             }
         )
