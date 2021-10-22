@@ -1,6 +1,6 @@
 import { deleteCardService, getCardService, searchCardsService, updateCardService } from "../services/cardService";
 import { logError } from "../utils/error/error";
-import { EHttpStatus, getCurrentUser, HttpError } from "../utils";
+import { EHttpStatus, getCurrentUserEmail, HttpError } from "../utils";
 import { isValidObjectId } from "mongoose";
 import {
     Controller,
@@ -39,7 +39,7 @@ export class CardController extends Controller {
         @Query() name?: string
     ): Promise<ICardResponse[]> {
         try {
-            const user = getCurrentUser(request.headers.authorization);
+            const email = getCurrentUserEmail(request.headers.authorization);
             const paginatedCardQuery: IPaginatedQuery<IQueryCard> = {
                 skip: skip ?? 0,
                 limit: limit ?? 10,
@@ -48,7 +48,7 @@ export class CardController extends Controller {
                 name,
             };
 
-            return await searchCardsService(user.email, paginatedCardQuery);
+            return await searchCardsService(email, paginatedCardQuery);
         } catch (error) {
             logError(error);
 
@@ -64,9 +64,9 @@ export class CardController extends Controller {
         }
 
         try {
-            const user = getCurrentUser(request.headers.authorization);
+            const email = getCurrentUserEmail(request.headers.authorization);
 
-            return await getCardService(user.email, cardId);
+            return await getCardService(email, cardId);
         } catch (error) {
             logError(error);
 
@@ -90,8 +90,8 @@ export class CardController extends Controller {
         }
 
         try {
-            const user = getCurrentUser(request.headers.authorization);
-            await updateCardService(user.email, cardId, front, back, example);
+            const email = getCurrentUserEmail(request.headers.authorization);
+            await updateCardService(email, cardId, front, back, example);
             this.setStatus(EHttpStatus.NO_CONTENT);
 
             return;
@@ -112,8 +112,8 @@ export class CardController extends Controller {
         }
 
         try {
-            const user = getCurrentUser(request.headers.authorization);
-            await deleteCardService(user.email, cardId);
+            const email = getCurrentUserEmail(request.headers.authorization);
+            await deleteCardService(email, cardId);
             this.setStatus(EHttpStatus.NO_CONTENT);
 
             return;
@@ -136,9 +136,9 @@ export class CardController extends Controller {
         const { reviewLevel } = body;
 
         try {
-            const user = getCurrentUser(request.headers.authorization);
+            const email = getCurrentUserEmail(request.headers.authorization);
 
-            return await reviewCardService(user.email, cardId, reviewLevel);
+            return await reviewCardService(email, cardId, reviewLevel);
         } catch (error) {
             logError(error);
 

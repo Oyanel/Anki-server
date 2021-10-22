@@ -7,25 +7,29 @@ import { compare } from "bcryptjs";
 import { addMinutes, addMonths } from "date-fns";
 import { LeanDocument } from "mongoose";
 
-const saveToken = async (accessToken: string, refreshToken: string, user: TUserResponse) => {
+const saveToken = async (accessToken: string, refreshToken: string, email: string) => {
     const tokenModel: IToken = {
-        user: user.email,
+        user: email,
         accessToken: accessToken,
         refreshToken: refreshToken,
         accessTokenExpiresAt: addMinutes(new Date(), 60),
         refreshTokenExpiresAt: addMonths(new Date(), 3),
     };
 
-    await Token.findOneAndReplace({ user: user.email }, tokenModel, { upsert: true }).lean().exec();
+    await Token.findOneAndReplace({ user: email }, tokenModel, { upsert: true }).lean().exec();
 
     return tokenModel;
 };
 
 const generateToken = async (user: TUserResponse) => {
-    const accessToken = sign({ user }, process.env.APP_PRIVATE_TOKEN, { expiresIn: "1h" });
-    const refreshToken = sign({ user }, process.env.APP_PUBLIC_TOKEN, { expiresIn: "12w" });
+    const {
+        email,
+        profile: { username },
+    } = user;
+    const accessToken = sign({ email, username }, process.env.APP_PRIVATE_TOKEN, { expiresIn: "1h" });
+    const refreshToken = sign({ email, username }, process.env.APP_PUBLIC_TOKEN, { expiresIn: "12w" });
 
-    return saveToken(accessToken, refreshToken, user);
+    return saveToken(accessToken, refreshToken, user.email);
 };
 
 export const loginService = async (user: IUserBase) =>

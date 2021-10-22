@@ -21,11 +21,13 @@ services:
     mongo-express:
         container_name: mongo-express
         image: mongo-express
+        env_file:
+            - .env
         depends_on:
             - mongo
         ports:
             - 8081:8081
         restart: unless-stopped
         environment:
-            ME_CONFIG_MONGODB_ADMINUSERNAME: root
-            ME_CONFIG_MONGODB_ADMINPASSWORD: root
+            ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER_DEV}
+            ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PWD_DEV}

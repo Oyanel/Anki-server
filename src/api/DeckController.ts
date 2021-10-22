@@ -1,5 +1,5 @@
 import { logError } from "../utils/error/error";
-import { EHttpStatus, getCurrentUser, HttpError } from "../utils";
+import { EHttpStatus, getCurrentUserEmail, HttpError } from "../utils";
 import {
     addCardService,
     createDeckService,
@@ -53,8 +53,8 @@ export class DeckController extends Controller {
         }
 
         try {
-            const user = getCurrentUser(request.headers.authorization);
-            const newCard = await addCardService(user.email, deckId, card);
+            const email = getCurrentUserEmail(request.headers.authorization);
+            const newCard = await addCardService(email, deckId, card);
 
             this.setStatus(EHttpStatus.CREATED);
 
@@ -78,8 +78,8 @@ export class DeckController extends Controller {
         }
 
         try {
-            const user = getCurrentUser(request.headers.authorization);
-            const newDeck = await createDeckService(user.email, deck);
+            const email = getCurrentUserEmail(request.headers.authorization);
+            const newDeck = await createDeckService(email, deck);
             this.setStatus(EHttpStatus.CREATED);
 
             this.setStatus(200);
@@ -102,8 +102,8 @@ export class DeckController extends Controller {
         }
 
         try {
-            const user = getCurrentUser(request.headers.authorization);
-            await joinDeckService(user.email, deckId);
+            const email = getCurrentUserEmail(request.headers.authorization);
+            await joinDeckService(email, deckId);
             this.setStatus(EHttpStatus.CREATED);
 
             return;
@@ -124,8 +124,8 @@ export class DeckController extends Controller {
         }
 
         try {
-            const user = getCurrentUser(request.headers.authorization);
-            await leaveDeckService(user.email, deckId);
+            const email = getCurrentUserEmail(request.headers.authorization);
+            await leaveDeckService(email, deckId);
             this.setStatus(EHttpStatus.CREATED);
 
             return;
@@ -149,9 +149,9 @@ export class DeckController extends Controller {
         }
 
         try {
-            const user = getCurrentUser(request.headers.authorization);
+            const email = getCurrentUserEmail(request.headers.authorization);
 
-            return await getDeckService(user.email, deckId, skip);
+            return await getDeckService(email, deckId, skip);
         } catch (error) {
             logError(error);
 
@@ -175,8 +175,8 @@ export class DeckController extends Controller {
         }
 
         try {
-            const user = getCurrentUser(request.headers.authorization);
-            await updateDeckService(user, deckId, name, description, isPrivate);
+            const email = getCurrentUserEmail(request.headers.authorization);
+            await updateDeckService(email, deckId, name, description, isPrivate);
             this.setStatus(EHttpStatus.NO_CONTENT);
 
             return;
@@ -197,8 +197,8 @@ export class DeckController extends Controller {
         }
 
         try {
-            const user = getCurrentUser(request.headers.authorization);
-            await deleteDeckService(user.email, deckId);
+            const email = getCurrentUserEmail(request.headers.authorization);
+            await deleteDeckService(email, deckId);
             this.setStatus(EHttpStatus.NO_CONTENT);
 
             return;
@@ -228,9 +228,9 @@ export class DeckController extends Controller {
                 tags,
             };
 
-            const user = getCurrentUser(request.headers.authorization);
+            const email = getCurrentUserEmail(request.headers.authorization);
 
-            return await searchDecksService(user.email, query, pagination);
+            return await searchDecksService(email, query, pagination);
         } catch (error) {
             logError(error);
 

@@ -11,7 +11,6 @@ import { createCardService, searchCardsService } from "./cardService";
 import { FilterQuery, LeanDocument, Types } from "mongoose";
 import { addDeckToProfile, getUserDecks, isDeckOwned } from "./userService";
 import { IPaginatedQuery, IPagination } from "../api/common/Pagination/IPagination";
-import { TUserResponse } from "../models/authentication/User";
 import { ICardResponse, ICreateCard, IQueryCard } from "../models/Card";
 
 export const isDeckExisting = async (deckId: string) =>
@@ -118,14 +117,14 @@ export const getDeckService = async (email: string, id: string, skip) => {
 };
 
 export const updateDeckService = async (
-    user: TUserResponse,
+    email: string,
     id: string,
     name: string,
     description: string,
     isPrivate: boolean
 ) => {
     const promises = [];
-    if (!(await isDeckOwned(user.email, id))) {
+    if (!(await isDeckOwned(email, id))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 

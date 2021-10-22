@@ -43,6 +43,7 @@ export const createCardService = async (
                 reversedCardDocument.deleteOne();
                 throw error;
             });
+
             cards.push(getCardResponse(reversedCardDocument));
             promises.push(promiseReversedReview);
         }

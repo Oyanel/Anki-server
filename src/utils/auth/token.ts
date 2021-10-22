@@ -2,11 +2,10 @@ import { verify } from "jsonwebtoken";
 import { HttpError } from "../error/HttpError";
 import { EHttpStatus } from "../IHttp";
 import { logError } from "../error/error";
-import { TUserResponse } from "../../models/authentication/User";
 
-export const getCurrentUser = (authorization: string): TUserResponse => {
+export const getCurrentUserEmail = (authorization: string): string => {
     try {
-        return verify(authorization.split(" ")[1], process.env.APP_PRIVATE_TOKEN).user;
+        return verify(authorization.split(" ")[1], process.env.APP_PRIVATE_TOKEN).email;
     } catch (error) {
         logError(error);
 
