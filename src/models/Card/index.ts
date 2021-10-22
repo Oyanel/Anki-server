@@ -1,4 +1,4 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model } from "mongoose";
 import { TCardDocument } from "./ICard";
 import Deck from "../Deck";
 import Review from "../Review";
@@ -6,7 +6,7 @@ import { validateExample, validateType } from "./validate";
 
 const CardSchema = new Schema<TCardDocument>({
     deck: {
-        type: Types.ObjectId,
+        type: Schema.Types.ObjectId,
         required: true,
     },
     front: {
@@ -22,7 +22,7 @@ const CardSchema = new Schema<TCardDocument>({
         validate: { validator: validateExample, msg: "The example is too long" },
     },
     referenceCard: {
-        type: Types.ObjectId,
+        type: Schema.Types.ObjectId,
     },
     type: {
         type: String,

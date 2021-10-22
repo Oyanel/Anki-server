@@ -37,7 +37,7 @@ export const getReviews = async (email: string, cards: string[], toReview?: bool
 
 export const reviewCardService = async (email: string, id: string, reviewQuality: ECardReviewName) => {
     const promiseReview = Review.findOne({ card: id, user: email }).exec();
-    const promiseCard = Card.findById(Types.ObjectId(id)).exec();
+    const promiseCard = Card.findById(new Types.ObjectId(id)).exec();
 
     return Promise.all([promiseCard, promiseReview]).then(async (response) => {
         const card = response[0];

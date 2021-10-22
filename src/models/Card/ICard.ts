@@ -6,12 +6,12 @@ export enum ECardType {
 }
 
 export interface ICard {
-    deck: string;
+    deck: String;
     front: string[];
     back: string[];
     example: string;
     type: ECardType;
-    referenceCard?: string;
+    referenceCard?: String;
 }
 
 /**

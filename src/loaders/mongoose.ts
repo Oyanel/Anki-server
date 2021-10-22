@@ -7,6 +7,7 @@ export const mongooseInit = () => {
             `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PWD}@${process.env.MONGO_URL}/${process.env.DATABASE_NAME}`,
             {
                 ignoreUndefined: true,
+                loggerLevel: "error",
             }
         )
             .then(() => {

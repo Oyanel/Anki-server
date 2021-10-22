@@ -1,4 +1,4 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model } from "mongoose";
 import { TReviewDocument } from "./IReview";
 import { validateEmail } from "../authentication/User/validate";
 
@@ -20,7 +20,7 @@ const ReviewSchema = new Schema<TReviewDocument>({
         required: true,
     },
     card: {
-        type: Types.ObjectId,
+        type: Schema.Types.ObjectId,
         required: true,
     },
     user: {

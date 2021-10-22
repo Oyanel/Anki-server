@@ -28,7 +28,7 @@ export const isCardReviewable = async (email: string, cardId: string) => {
     const { reviewedDecks, privateDecks } = await getUserDecks(email);
     const card = await getCardService(email, cardId, true);
 
-    return reviewedDecks.concat(privateDecks).includes(card.deck);
+    return reviewedDecks.concat(privateDecks).includes(card.deck.toString());
 };
 
 export const registerService = async (user: IUserRegistration) => {
@@ -61,7 +61,7 @@ export const changeLostPassword = async (code: number, password: string) => {
                     await userDocument.save();
                 });
 
-            await codeDocument.remove();
+            await codeDocument.deleteOne();
         });
 };
 

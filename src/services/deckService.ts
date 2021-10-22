@@ -15,7 +15,7 @@ import { TUserResponse } from "../models/authentication/User";
 import { ICardResponse, ICreateCard, IQueryCard } from "../models/Card";
 
 export const isDeckExisting = async (deckId: string) =>
-    Deck.countDocuments({ _id: Types.ObjectId(deckId) }).then((count) => count > 0);
+    Deck.countDocuments({ _id: new Types.ObjectId(deckId) }).then((count) => count > 0);
 
 export const isDeckAccessible = async (email: string, deckId: string) => {
     const { privateDecks, reviewedDecks } = await getUserDecks(email);
@@ -34,7 +34,7 @@ export const isDeckAccessible = async (email: string, deckId: string) => {
 
 export const isCardOwned = async (email: string, cardId: string) => {
     const { privateDecks } = await getUserDecks(email);
-    const orConditions = [{ _id: { $in: privateDecks }, cards: { $in: Types.ObjectId(cardId) } }];
+    const orConditions = [{ _id: { $in: privateDecks }, cards: { $in: new Types.ObjectId(cardId) } }];
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -60,7 +60,7 @@ export const addCardService = async (email: string, deckId: string, card: ICreat
     const cards = await createCardService(email, deckId, front, back, example, reverseCard, type);
     const cardId = cards[0].id;
 
-    await Deck.findOne({ _id: Types.ObjectId(deckId) })
+    await Deck.findOne({ _id: new Types.ObjectId(deckId) })
         .exec()
         .then((deck) => {
             deck.cards.push(cardId);
@@ -95,7 +95,7 @@ export const getDeckService = async (email: string, id: string, skip) => {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
-    return Deck.findById(Types.ObjectId(id))
+    return Deck.findById(new Types.ObjectId(id))
         .lean()
         .exec()
         .then(async (deckDocument) => {
@@ -129,7 +129,7 @@ export const updateDeckService = async (
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
-    const updateDeckPromise = Deck.findById(Types.ObjectId(id))
+    const updateDeckPromise = Deck.findById(new Types.ObjectId(id))
         .exec()
         .then(async (deckDocument) => {
             if (!deckDocument) {
@@ -147,7 +147,7 @@ export const updateDeckService = async (
 };
 
 export const deleteDeckService = async (userEmail: string, id: string) =>
-    Deck.findById(Types.ObjectId(id)).then(async (deck) => {
+    Deck.findById(new Types.ObjectId(id)).then(async (deck) => {
         if (!deck) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
         }

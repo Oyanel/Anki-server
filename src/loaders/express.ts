@@ -1,9 +1,8 @@
-import { urlencoded } from "body-parser";
+import { urlencoded, json } from "body-parser";
 import cors from "cors";
 import { Application } from "express";
 import logger from "morgan";
 import { loggerConfig } from "../utils/logger/httpLogger";
-import { json } from "body-parser";
 import cookieParser from "cookie-parser";
 
 export default async (app: Application) => {
@@ -18,8 +17,7 @@ export default async (app: Application) => {
 
     app.use(cors());
     app.use(
-        logger({
-            format: "combined",
+        logger("combined", {
             stream: loggerConfig,
             skip: (req, res) => {
                 return res.statusCode < 400;

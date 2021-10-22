@@ -63,7 +63,7 @@ export const getCardService = async (email: string, id: string, overrideSecurity
         }
     }
 
-    return Card.findById(Types.ObjectId(id)).then((cardDocument) => {
+    return Card.findById(new Types.ObjectId(id)).then((cardDocument) => {
         if (!cardDocument) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
         }
@@ -87,7 +87,7 @@ export const updateCardService = async (
         throw new HttpError(EHttpStatus.BAD_REQUEST, "The front and back fields cannot be empty");
     }
 
-    Card.findById(Types.ObjectId(id))
+    Card.findById(new Types.ObjectId(id))
         .exec()
         .then(async (cardDocument) => {
             if (!cardDocument) {
@@ -101,7 +101,7 @@ export const updateCardService = async (
 };
 
 export const deleteCardService = async (email: string, cardId: string) =>
-    Card.findById(Types.ObjectId(cardId)).then(async (card) => {
+    Card.findById(new Types.ObjectId(cardId)).then(async (card) => {
         if (!card) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
         }

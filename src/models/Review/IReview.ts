@@ -2,7 +2,7 @@ import { Document } from "mongoose";
 import { ICardResponse } from "../Card";
 
 export interface IReview {
-    card: string;
+    card: String;
     user: string;
     lastReview: Date;
     nextReview: Date;

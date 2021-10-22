@@ -15,7 +15,7 @@ async function startServer() {
         RegisterRoutes(app);
 
         app.use(function errorHandler(
-            err: HttpError | ValidateError,
+            err: HttpError | ValidateError | SyntaxError | Error,
             req: Request,
             res: Response,
             next: NextFunction
@@ -29,6 +29,16 @@ async function startServer() {
                 const error = new HttpError(EHttpStatus.BAD_REQUEST, "Invalid parameters");
 
                 return sendError(res, error);
+            }
+
+            if (err instanceof SyntaxError) {
+                return sendError(res, new HttpError(EHttpStatus.BAD_REQUEST, "Syntax error"));
+            }
+
+            if (err) {
+                logError(err);
+
+                return sendError(res, new HttpError(EHttpStatus.INTERNAL_ERROR, "Internal error"));
             }
 
             next();
