@@ -1,27 +1,28 @@
 /* eslint-disable no-undef */
 
 print("Start #################################################################");
+print(_getEnv("MONGO_ADMIN_PASSWORD"));
 print("Init Database");
 
 try {
-    db.auth("root", "root");
+    db.auth("root", _getEnv("MONGO_ADMIN_PASSWORD"));
 
-    db = db.getSiblingDB("anki_dev");
+    db = db.getSiblingDB(_getEnv("DATABASE_NAME_DEV"));
 
     db.createUser({
-        user: "anki_dev",
-        pwd: "anki_dev",
-        roles: [{ role: "readWrite", db: "anki_dev" }],
+        user: _getEnv("MONGO_USER_DEV"),
+        pwd: _getEnv("MONGO_PWD_DEV"),
+        roles: [{ role: "readWrite", db: _getEnv("DATABASE_NAME_DEV") }],
     });
 
     db.createCollection("users");
 
-    db = db.getSiblingDB("anki_prod");
+    db = db.getSiblingDB(_getEnv("DATABASE_NAME_PROD"));
 
     db.createUser({
-        user: "anki_prod",
-        pwd: "anki_prod",
-        roles: [{ role: "readWrite", db: "anki_prod" }],
+        user: _getEnv("MONGO_USER_PROD"),
+        pwd: _getEnv("MONGO_PWD_PROD"),
+        roles: [{ role: "readWrite", db: _getEnv("DATABASE_NAME_PROD") }],
     });
 
     db.createCollection("users");

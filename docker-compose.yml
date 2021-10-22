@@ -7,6 +7,8 @@ services:
     mongo:
         container_name: mongo
         image: mongo
+        env_file:
+          - .env
         ports:
           - 27017:27017
         volumes:
@@ -36,4 +38,3 @@ services:
         - 3000:3000
       depends_on:
         - mongo
-

@@ -1,7 +1,7 @@
 {
   "name": "ryoumengo-server",
   "version": "1.0.0",
-  "description": "Anki node server",
+  "description": "Ryoumengo node server",
   "main": "dist/app.js",
   "scripts": {
     "start": "tsoa spec-and-routes && tsc && node dist/src/app.js",
