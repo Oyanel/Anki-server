@@ -6,6 +6,7 @@ import { logError } from "../utils/error/error";
 import { IPaginatedQuery } from "../api/common/Pagination/IPagination";
 import { getUserDecks } from "./userService";
 import { createReviewService, getReviews } from "./reviewService";
+import { isBefore } from "date-fns";
 
 export const getDeckCardsService = async (deckId: string) => Card.find({ deck: deckId }).lean().exec();
 
@@ -143,16 +144,28 @@ export const searchCardsService = async (email: string, query: IPaginatedQuery<I
                 return [];
             }
             const cardIds = cardDocuments.map((cardDocument) => cardDocument._id);
-            const cardsToReview = await getReviews(email, cardIds, toReview);
-            const cardIdToReviewList = cardsToReview.map((review) => review.card.toString());
+            const cardsReview = await getReviews(email, cardIds, toReview);
+            const cardIdReviewedList = cardsReview.map((review) => review.card.toString());
             const cards = cardDocuments.map((cardDocument) => {
-                const isToReview = cardIdToReviewList.includes(cardDocument._id.toString());
+                let isToReview = false;
+
+                if (toReview === undefined) {
+                    isToReview = isBefore(
+                        cardsReview.find((review) => review.card.toString() === cardDocument._id.toString()).nextReview,
+                        new Date()
+                    );
+                } else if (
+                    (toReview && cardIdReviewedList.includes(cardDocument._id.toString())) ||
+                    (!toReview && !cardIdReviewedList.includes(cardDocument._id.toString()))
+                ) {
+                    isToReview = true;
+                }
 
                 return getCardResponse(cardDocument, isToReview);
             });
 
-            if (toReview) {
-                return cards.filter((card) => card.toReview);
+            if (toReview !== undefined) {
+                return cards.filter((card) => (toReview ? card.toReview : !card.toReview));
             }
 
             return cards;

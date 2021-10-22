@@ -27,7 +27,7 @@ import {
     Tags,
 } from "tsoa";
 import express from "express";
-import { ICardResponse, ICreateCard } from "../models/Card";
+import { ICard, ICreateCard } from "../models/Card";
 import { ICreateDeck, IDeckResponse, IDeckSummaryResponse, IQueryDeck } from "../models/Deck";
 import { IPagination } from "./common/Pagination/IPagination";
 import { formatISO, parse } from "date-fns";
@@ -43,11 +43,7 @@ export class DeckController extends Controller {
     @Post("{deckId}/add")
     @Response<HttpError>(EHttpStatus.NOT_FOUND)
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
-    async addCard(
-        deckId: string,
-        @Request() request: express.Request,
-        @Body() card: ICreateCard
-    ): Promise<ICardResponse[]> {
+    async addCard(deckId: string, @Request() request: express.Request, @Body() card: ICreateCard): Promise<ICard[]> {
         if (!isValidObjectId(deckId)) {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Deck id invalid");
         }
