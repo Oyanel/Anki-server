@@ -144,31 +144,16 @@ export const searchCardsService = async (email: string, query: IPaginatedQuery<I
                 return [];
             }
             const cardIds = cardDocuments.map((cardDocument) => cardDocument._id);
-            const cardsReview = await getReviews(email, cardIds, toReview);
-            const cardIdReviewedList = cardsReview.map((review) => review.card.toString());
-            const cards = cardDocuments.map((cardDocument) => {
-                let isToReview = false;
+            const reviewList = await getReviews(email, cardIds, toReview);
 
-                if (toReview === undefined) {
-                    isToReview = isBefore(
-                        cardsReview.find((review) => review.card.toString() === cardDocument._id.toString()).nextReview,
-                        new Date()
-                    );
-                } else if (
-                    (toReview && cardIdReviewedList.includes(cardDocument._id.toString())) ||
-                    (!toReview && !cardIdReviewedList.includes(cardDocument._id.toString()))
-                ) {
-                    isToReview = true;
-                }
+            return reviewList.map((review) => {
+                const card = cardDocuments.find(
+                    (cardDocument) => review.card.toString() === cardDocument._id.toString()
+                );
+                const isToReview = isBefore(review.nextReview, new Date());
 
-                return getCardResponse(cardDocument, isToReview);
+                return getCardResponse(card, isToReview);
             });
-
-            if (toReview !== undefined) {
-                return cards.filter((card) => (toReview ? card.toReview : !card.toReview));
-            }
-
-            return cards;
         });
 };
 

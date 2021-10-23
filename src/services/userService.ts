@@ -136,8 +136,8 @@ export const leaveDeckService = async (email: string, deckId: string) => {
 
 export const getUserDecks = async (email: string): Promise<TUserDecks> =>
     User.findOne({ email }).then((userDocument) => ({
-        privateDecks: userDocument.profile.privateDecks,
-        reviewedDecks: userDocument.profile.reviewedDecks,
+        privateDecks: userDocument.profile.privateDecks.map((deck) => deck.toString()),
+        reviewedDecks: userDocument.profile.reviewedDecks.map((deck) => deck.toString()),
     }));
 
 export const addDeckToProfile = async (deckId: string, email: string) =>

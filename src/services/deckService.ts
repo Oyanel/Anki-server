@@ -19,7 +19,11 @@ export const isDeckExisting = async (deckId: string) =>
 export const isDeckAccessible = async (email: string, deckId: string) => {
     const { privateDecks, reviewedDecks } = await getUserDecks(email);
 
-    if (privateDecks.concat(reviewedDecks).includes(deckId)) {
+    console.log(deckId.toString());
+    console.log(privateDecks);
+    console.log(reviewedDecks);
+
+    if (privateDecks.concat(reviewedDecks).includes(deckId.toString())) {
         return true;
     }
 
