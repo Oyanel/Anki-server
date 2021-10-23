@@ -1,5 +1,5 @@
 import Token, { IToken } from "../models/authentication/Token";
-import User, { IUserBase, TUserDocument, TUserResponse } from "../models/authentication/User";
+import User, { IUserBase, IUserResponse, TUserDocument } from "../models/authentication/User";
 import { sign, verify } from "jsonwebtoken";
 import "dotenv";
 import { EHttpStatus, HttpError } from "../utils";
@@ -21,15 +21,12 @@ const saveToken = async (accessToken: string, refreshToken: string, email: strin
     return tokenModel;
 };
 
-const generateToken = async (user: TUserResponse) => {
-    const {
-        email,
-        profile: { username },
-    } = user;
+const generateToken = async (user: IUserResponse) => {
+    const { email, username } = user;
     const accessToken = sign({ email, username }, process.env.APP_PRIVATE_TOKEN, { expiresIn: "1h" });
     const refreshToken = sign({ email, username }, process.env.APP_PUBLIC_TOKEN, { expiresIn: "12w" });
 
-    return saveToken(accessToken, refreshToken, user.email);
+    return saveToken(accessToken, refreshToken, email);
 };
 
 export const loginService = async (user: IUserBase) =>
@@ -51,12 +48,12 @@ export const loginService = async (user: IUserBase) =>
         });
 
 export const refreshTokenService = async (refreshToken: string) => {
-    const tokenContent = verify(refreshToken, process.env.APP_PUBLIC_TOKEN);
+    const tokenContent: IUserResponse = verify(refreshToken, process.env.APP_PUBLIC_TOKEN);
 
-    return generateToken(tokenContent.user);
+    return generateToken(tokenContent);
 };
 
-const getUserResponse = (userDocument: TUserDocument | LeanDocument<TUserDocument>): TUserResponse => ({
-    profile: userDocument.profile,
+const getUserResponse = (userDocument: TUserDocument | LeanDocument<TUserDocument>): IUserResponse => ({
+    username: userDocument.profile.username,
     email: userDocument.email,
 });

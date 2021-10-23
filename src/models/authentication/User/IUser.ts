@@ -60,6 +60,9 @@ export enum EOTPReason {
     CHANGE_PASSWORD = "CHANGE_PASSWORD",
 }
 
-export type TUserResponse = Omit<IUser, "password">;
+export interface IUserResponse {
+    email: IUser["email"];
+    username: IProfile["username"];
+}
 
 export type TUserDocument = IUser & Document;
