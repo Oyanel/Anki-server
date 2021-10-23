@@ -6,6 +6,10 @@ import { verify } from "jsonwebtoken";
 export const expressAuthentication = (req: Request, _securityName: string, _scopes?: string[]): Promise<unknown> => {
     const authorization = req.headers.authorization;
 
+    if (!authorization) {
+        return Promise.reject(new HttpError(EHttpStatus.UNAUTHORIZED, "The authorization token is missing"));
+    }
+
     return new Promise((resolve, reject) => {
         verify(authorization.split(" ")[1], process.env.APP_PRIVATE_TOKEN, (error, decoded) => {
             if (error) {
