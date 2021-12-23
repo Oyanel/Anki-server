@@ -8,7 +8,7 @@ import {
     searchDecksService,
     updateDeckService,
 } from "../services/deckService";
-import { validateDescription, validateName, validateTags } from "../models/Deck/validate";
+import { validateCardType, validateDescription, validateName, validateTags } from "../models/Deck/validate";
 import { isValidObjectId } from "mongoose";
 import {
     Body,
@@ -28,7 +28,7 @@ import {
 } from "tsoa";
 import express from "express";
 import { ICard, ICreateCard } from "../models/Card";
-import { ICreateDeck, IDeckResponse, IDeckSummaryResponse, IQueryDeck } from "../models/Deck";
+import { ICreateDeck, IDeckResponse, IDeckSummaryResponse, IEditDeck, IQueryDeck } from "../models/Deck";
 import { IPagination } from "./common/Pagination/IPagination";
 import { formatISO, parse } from "date-fns";
 import { joinDeckService, leaveDeckService } from "../services/userService";
@@ -67,9 +67,14 @@ export class DeckController extends Controller {
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
     @SuccessResponse(EHttpStatus.OK)
     async createDeck(@Request() request: express.Request, @Body() deck: ICreateDeck): Promise<IDeckSummaryResponse> {
-        const { description, name, tags } = deck;
+        const { description, name, tags, defaultCardType } = deck;
 
-        if (!validateName(name) || !validateDescription(description) || !validateTags(tags)) {
+        if (
+            !validateName(name) ||
+            !validateDescription(description) ||
+            !validateTags(tags) ||
+            !validateCardType(defaultCardType)
+        ) {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Deck invalid");
         }
 
@@ -159,11 +164,11 @@ export class DeckController extends Controller {
     @Response<HttpError>(EHttpStatus.NOT_FOUND)
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
     @SuccessResponse(EHttpStatus.NO_CONTENT)
-    async updateDeck(deckId: string, @Body() deck: ICreateDeck, @Request() request: express.Request): Promise<void> {
-        const { name, description, isPrivate, tags } = deck;
+    async updateDeck(deckId: string, @Body() deck: IEditDeck, @Request() request: express.Request): Promise<void> {
+        const { name, description, tags, defaultCardType } = deck;
 
-        if (!isValidObjectId(deckId) || !validateTags(tags)) {
-            throw new HttpError(EHttpStatus.BAD_REQUEST, "Deck id invalid");
+        if (!isValidObjectId(deckId) || !validateTags(tags) || !validateCardType(defaultCardType)) {
+            throw new HttpError(EHttpStatus.BAD_REQUEST, "Deck invalid");
         }
 
         if (!validateName(name) || !validateDescription(description)) {
@@ -172,7 +177,7 @@ export class DeckController extends Controller {
 
         try {
             const email = getCurrentUserEmail(request.headers.authorization);
-            await updateDeckService(email, deckId, name, description, isPrivate);
+            await updateDeckService(email, deckId, deck);
             this.setStatus(EHttpStatus.NO_CONTENT);
 
             return;
@@ -208,19 +213,19 @@ export class DeckController extends Controller {
     @Get()
     async searchDecks(
         @Request() request: express.Request,
+        @Query() isReviewed: boolean,
         @Query() skip?: number,
         @Query() limit?: number,
         @Query() name?: string,
         @Query() from?: string,
-        @Query() tags?: string[],
-        @Query() isPrivate?: boolean
+        @Query() tags?: string[]
     ): Promise<IDeckSummaryResponse[]> {
         try {
             const pagination: IPagination = { skip: skip ?? 0, limit: limit ?? 10 };
             const query: IQueryDeck = {
                 from: from ? formatISO(parse(from, DATE_FORMAT, new Date())) : undefined,
                 name,
-                isPrivate,
+                isReviewed,
                 tags,
             };
 

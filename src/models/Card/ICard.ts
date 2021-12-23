@@ -19,7 +19,7 @@ export interface ICard {
  *     "id": "123d1",
  *     "front": ["こんいしはあ"],
  *     "back": ["Bonjour"],
- *     "example": "こんにちはみなさん、げんきですか。"
+ *     "example": "こんにちはみなさん、げんきですか。",
  *     "referenceCard": 123
  * }
  */

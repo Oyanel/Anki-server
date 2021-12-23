@@ -78,6 +78,16 @@ export const createReviewsService = async (email: string, cardIdList: string[]) 
         )
     );
 
+export const deleteReviewsService = async (cardIdList: string[], user?: string) =>
+    Review.deleteMany({ user: { $ne: user }, card: { $in: cardIdList } })
+        .lean()
+        .exec();
+
+export const deleteUserReviewsService = async (cardIdList: string[], user: string) =>
+    Review.deleteMany({ user, card: { $in: cardIdList } })
+        .lean()
+        .exec();
+
 export const createReviewService = async (email: string, cardId: string) => {
     if (await isCardReviewed(email, cardId)) {
         throw new HttpError(EHttpStatus.BAD_REQUEST, "You already review this card");

@@ -157,6 +157,18 @@ export const searchCardsService = async (email: string, query: IPaginatedQuery<I
         });
 };
 
+export const getCardsByDeckId = (deckId: string) =>
+    Card.find({ deck: deckId })
+        .lean()
+        .exec()
+        .then(async (cardDocuments) => {
+            if (!cardDocuments) {
+                return [];
+            }
+
+            return cardDocuments.map((cardDocument) => cardDocument._id.toString());
+        });
+
 const getNewReversedCard = (card: TCardDocument): ICard => ({
     deck: card.deck,
     front: card.back,

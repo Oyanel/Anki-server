@@ -37,11 +37,11 @@ export const loginService = async (user: IUserBase) =>
         .exec()
         .then(async (userDocument) => {
             if (!userDocument) {
-                throw new HttpError(EHttpStatus.UNAUTHORIZED, "email or password incorrect.");
+                throw new HttpError(EHttpStatus.UNAUTHORIZED, "Email or password incorrect.");
             }
             const isEqual = await compare(user.password, userDocument.password);
             if (!isEqual) {
-                throw new HttpError(EHttpStatus.UNAUTHORIZED, "Password incorrect.");
+                throw new HttpError(EHttpStatus.UNAUTHORIZED, "Email or password incorrect.");
             }
 
             return generateToken(getUserResponse(userDocument));

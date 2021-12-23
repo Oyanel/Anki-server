@@ -1,5 +1,5 @@
-import { Types, model, Schema } from "mongoose";
-import { validateName, validateDescription, validateTags } from "./validate";
+import { model, Schema, Types } from "mongoose";
+import { validateCardType, validateDescription, validateName, validateTags } from "./validate";
 import { TDeckDocument } from "./IDeck";
 import Card from "../Review";
 import User from "../authentication/User";
@@ -24,6 +24,15 @@ const DeckSchema = new Schema<TDeckDocument>(
             validate: { validator: validateTags, msg: "Tags are incorrect" },
         },
         isPrivate: {
+            type: Boolean,
+            required: true,
+        },
+        defaultCardType: {
+            type: String,
+            required: true,
+            validate: { validator: validateCardType, msg: "Not a valid card type" },
+        },
+        defaultReviewReverseCard: {
             type: Boolean,
             required: true,
         },

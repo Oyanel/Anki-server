@@ -3,25 +3,23 @@ import Deck, {
     IDeck,
     IDeckResponse,
     IDeckSummaryResponse,
+    IEditDeck,
     IQueryDeck,
     TDeckDocument,
 } from "../models/Deck";
 import { EHttpStatus, HttpError } from "../utils";
-import { createCardService, searchCardsService } from "./cardService";
+import { createCardService, getCardsByDeckId, searchCardsService } from "./cardService";
 import { FilterQuery, LeanDocument, Types } from "mongoose";
-import { addDeckToProfile, getUserDecks, isDeckOwned } from "./userService";
+import { addDeckToProfile, getUserDecks, isDeckOwned, isDeckReviewed } from "./userService";
 import { IPaginatedQuery, IPagination } from "../api/common/Pagination/IPagination";
 import { ICardResponse, ICreateCard, IQueryCard } from "../models/Card";
+import { deleteReviewsService } from "./reviewService";
 
 export const isDeckExisting = async (deckId: string) =>
     Deck.countDocuments({ _id: new Types.ObjectId(deckId) }).then((count) => count > 0);
 
 export const isDeckAccessible = async (email: string, deckId: string) => {
     const { privateDecks, reviewedDecks } = await getUserDecks(email);
-
-    console.log(deckId.toString());
-    console.log(privateDecks);
-    console.log(reviewedDecks);
 
     if (privateDecks.concat(reviewedDecks).includes(deckId.toString())) {
         return true;
@@ -77,16 +75,18 @@ export const addCardService = async (email: string, deckId: string, card: ICreat
 };
 
 export const createDeckService = async (userEmail: string, deckQuery: ICreateDeck) => {
-    const { isPrivate, name, description, tags } = deckQuery;
+    const { isPrivate, name, description, tags, defaultCardType, defaultReviewReverseCard } = deckQuery;
     const newDeck: IDeck = {
         name,
         description,
         tags,
         cards: [],
         isPrivate: isPrivate ?? true,
+        defaultCardType,
+        defaultReviewReverseCard,
     };
 
-    const deck = await Deck.create<IDeck>(newDeck).then((deckDocument) => getDeckSummaryResponse(deckDocument));
+    const deck = await Deck.create<IDeck>(newDeck).then((deckDocument) => getDeckSummaryResponse(deckDocument, true));
 
     await addDeckToProfile(deck.id, userEmail);
 
@@ -116,37 +116,37 @@ export const getDeckService = async (email: string, id: string, skip) => {
 
             const cards = await searchCardsService(email, paginatedCardQuery);
 
-            return getDeckResponse(deckDocument, cards);
+            return getDeckResponse(deckDocument, cards, isDeckReviewed(email, id));
         });
 };
 
-export const updateDeckService = async (
-    email: string,
-    id: string,
-    name: string,
-    description: string,
-    isPrivate: boolean
-) => {
-    const promises = [];
+export const updateDeckService = async (email: string, id: string, deck: IEditDeck) => {
+    const { defaultCardType, defaultReviewReverseCard, name, description, tags, isPrivate } = deck;
+    let shouldDeleteReview = false;
     if (!(await isDeckOwned(email, id))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
-    const updateDeckPromise = Deck.findById(new Types.ObjectId(id))
+    await Deck.findById(new Types.ObjectId(id))
         .exec()
         .then(async (deckDocument) => {
             if (!deckDocument) {
                 throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
             }
+            shouldDeleteReview = deckDocument.isPrivate !== isPrivate;
             deckDocument.name = name;
             deckDocument.description = description;
             deckDocument.isPrivate = isPrivate;
+            deckDocument.defaultReviewReverseCard = defaultReviewReverseCard;
+            deckDocument.defaultCardType = defaultCardType;
+            deckDocument.tags = tags;
             await deckDocument.save();
         });
 
-    promises.push(updateDeckPromise);
-
-    await Promise.all(promises);
+    if (shouldDeleteReview) {
+        const cardIdList = await getCardsByDeckId(id);
+        await deleteReviewsService(cardIdList, email);
+    }
 };
 
 export const deleteDeckService = async (userEmail: string, id: string) =>
@@ -161,20 +161,14 @@ export const deleteDeckService = async (userEmail: string, id: string) =>
     });
 
 export const searchDecksService = async (email: string, query: IQueryDeck, pagination: IPagination) => {
-    const { privateDecks } = await getUserDecks(email);
-    const isPrivateDeckCondition = { _id: { $in: privateDecks } };
-    const { isPrivate, name, from, tags } = query;
-    let conditionOperator = "$or";
-    const privateCondition: FilterQuery<IDeck> = [{ isPrivate: isPrivate ?? false }];
-    if (isPrivate || isPrivate === undefined) {
-        privateCondition.push(isPrivateDeckCondition);
-    }
-    if (isPrivate) {
-        conditionOperator = "$and";
-    }
+    const { privateDecks, reviewedDecks } = await getUserDecks(email);
+    const { isReviewed, name, from, tags } = query;
+    const ownDeckCondition: FilterQuery<IDeck> = isReviewed
+        ? { _id: { $in: privateDecks.concat(reviewedDecks) } }
+        : { _id: { $nin: privateDecks.concat(reviewedDecks) } };
     const condition = {
-        [conditionOperator]: privateCondition,
-        isPrivate: isPrivate ? true : undefined,
+        ...ownDeckCondition,
+        isPrivate: isReviewed ? undefined : false,
         name: { $regex: new RegExp(name ?? "", "i") },
         createdAt: from ? { $gt: from } : undefined,
         tags: tags ? { $in: tags } : undefined,
@@ -188,22 +182,29 @@ export const searchDecksService = async (email: string, query: IQueryDeck, pagin
         .lean()
         .exec()
         .then((decks) => {
-            return decks.map((deckDocument) => getDeckSummaryResponse(deckDocument));
+            return decks.map((deckDocument) => getDeckSummaryResponse(deckDocument, isReviewed));
         });
 };
 
-const getDeckSummaryResponse = (deckDocument: TDeckDocument | LeanDocument<TDeckDocument>): IDeckSummaryResponse => ({
+const getDeckSummaryResponse = (
+    deckDocument: TDeckDocument | LeanDocument<TDeckDocument>,
+    isReviewed: boolean
+): IDeckSummaryResponse => ({
     id: deckDocument._id,
     name: deckDocument.name,
     description: deckDocument.description,
     tags: deckDocument.tags,
     cards: deckDocument.cards,
     isPrivate: deckDocument.isPrivate,
+    defaultReviewReverseCard: deckDocument.defaultReviewReverseCard,
+    defaultCardType: deckDocument.defaultCardType,
+    isReviewed,
 });
 
 const getDeckResponse = (
     deckDocument: TDeckDocument | LeanDocument<TDeckDocument>,
-    cards: ICardResponse[]
+    cards: ICardResponse[],
+    isReviewed
 ): IDeckResponse => {
     return {
         id: deckDocument._id,
@@ -212,5 +213,8 @@ const getDeckResponse = (
         tags: deckDocument.tags,
         cards: cards,
         isPrivate: deckDocument.isPrivate,
+        defaultReviewReverseCard: deckDocument.defaultReviewReverseCard,
+        defaultCardType: deckDocument.defaultCardType,
+        isReviewed,
     };
 };
