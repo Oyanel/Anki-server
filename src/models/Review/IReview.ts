@@ -4,6 +4,7 @@ import { ICardResponse } from "../Card";
 export interface IReview {
     card: String;
     user: string;
+    isReverse: boolean;
     lastReview: Date;
     nextReview: Date;
     easeFactor: number;
@@ -48,9 +49,11 @@ export enum ECardReviewName {
  *     "EASY"
  *  }
  * @example {
- *     "reviewLevel": "EASY"
+ *     "reviewLevel": "EASY",
+ *     "isReverseReview": false
  * }
  */
-export interface IReviewLevel {
+export interface IReviewAction {
+    isReverseReview: boolean;
     reviewLevel: ECardReviewName;
 }

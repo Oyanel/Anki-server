@@ -34,8 +34,9 @@ export interface IDeck {
  *     "defaultReviewReverseCard": false
  * }
  */
-export interface IDeckSummaryResponse extends IDeck {
+export interface IDeckSummaryResponse extends Omit<IDeck, "cards"> {
     id: string;
+    cards: number;
     isReviewed: boolean;
 }
 

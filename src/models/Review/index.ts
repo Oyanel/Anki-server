@@ -11,6 +11,10 @@ const ReviewSchema = new Schema<TReviewDocument>({
         type: Date,
         required: true,
     },
+    isReverse: {
+        type: Boolean,
+        required: true,
+    },
     easeFactor: {
         type: Number,
         required: true,

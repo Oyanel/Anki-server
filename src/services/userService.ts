@@ -125,6 +125,10 @@ export const leaveDeckService = async (email: string, deckId: string) => {
         throw new HttpError(EHttpStatus.BAD_REQUEST, "You don't review this deck");
     }
 
+    if (await isDeckOwned(email, deckId)) {
+        throw new HttpError(EHttpStatus.UNAUTHORIZED, "You can't leave your deck, delete it instead");
+    }
+
     const userPromise = User.findOne({ email })
         .exec()
         .then((userDocument) => {

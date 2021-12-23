@@ -21,9 +21,6 @@ const CardSchema = new Schema<TCardDocument>({
         type: String,
         validate: { validator: validateExample, msg: "The example is too long" },
     },
-    referenceCard: {
-        type: Schema.Types.ObjectId,
-    },
     type: {
         type: String,
         validate: { validator: validateType, msg: "Type is not correct" },

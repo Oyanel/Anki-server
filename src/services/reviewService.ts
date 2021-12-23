@@ -35,13 +35,17 @@ export const getReviews = async (email: string, cards: string[], toReview?: bool
         .then((reviews) => reviews);
 };
 
-export const reviewCardService = async (email: string, id: string, reviewQuality: ECardReviewName) => {
-    const promiseReview = Review.findOne({ card: id, user: email }).exec();
+export const reviewCardService = async (
+    email: string,
+    id: string,
+    reviewQuality: ECardReviewName,
+    isReverseReview: boolean
+) => {
     const promiseCard = Card.findById(new Types.ObjectId(id)).exec();
+    const promiseReview = Review.findOne({ card: id, user: email, isReverse: isReverseReview }).exec();
 
     return Promise.all([promiseCard, promiseReview]).then(async (response) => {
-        const card = response[0];
-        const review = response[1] ?? (await createReviewService(email, id));
+        const [card, review] = response;
 
         if (!card) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
@@ -65,17 +69,26 @@ export const reviewCardService = async (email: string, id: string, reviewQuality
 
 export const createReviewsService = async (email: string, cardIdList: string[]) =>
     Review.insertMany(
-        cardIdList.map(
-            (cardId) =>
-                new Review({
-                    card: cardId,
-                    lastReview: new Date(),
-                    nextReview: addDays(new Date(), 1),
-                    easeFactor: 2.5,
-                    views: 0,
-                    user: email,
-                })
-        )
+        cardIdList.flatMap((cardId) => [
+            new Review({
+                card: cardId,
+                lastReview: new Date(),
+                nextReview: addDays(new Date(), 1),
+                isReverse: true,
+                easeFactor: 2.5,
+                views: 0,
+                user: email,
+            }),
+            new Review({
+                card: cardId,
+                lastReview: new Date(),
+                nextReview: addDays(new Date(), 1),
+                isReverse: false,
+                easeFactor: 2.5,
+                views: 0,
+                user: email,
+            }),
+        ])
     );
 
 export const deleteReviewsService = async (cardIdList: string[], user?: string) =>
@@ -88,13 +101,14 @@ export const deleteUserReviewsService = async (cardIdList: string[], user: strin
         .lean()
         .exec();
 
-export const createReviewService = async (email: string, cardId: string) => {
+export const createReviewService = async (email: string, cardId: string, isReverse: boolean) => {
     if (await isCardReviewed(email, cardId)) {
         throw new HttpError(EHttpStatus.BAD_REQUEST, "You already review this card");
     }
 
     const newReview = new Review({
         card: cardId,
+        isReverse,
         lastReview: new Date(),
         nextReview: addDays(new Date(), 1),
         easeFactor: 2.5,
@@ -173,9 +187,9 @@ const getCardReviewResponse = (
     back: cardDocument.back,
     front: cardDocument.front,
     example: cardDocument.example,
-    referenceCard: cardDocument.referenceCard,
     easeFactor: review.easeFactor,
     lastReview: review.lastReview,
     nextReview: review.nextReview,
     views: review.views,
+    isReverse: review.isReverse,
 });

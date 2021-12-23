@@ -43,7 +43,7 @@ export class DeckController extends Controller {
     @Post("{deckId}/add")
     @Response<HttpError>(EHttpStatus.NOT_FOUND)
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
-    async addCard(deckId: string, @Request() request: express.Request, @Body() card: ICreateCard): Promise<ICard[]> {
+    async addCard(deckId: string, @Request() request: express.Request, @Body() card: ICreateCard): Promise<ICard> {
         if (!isValidObjectId(deckId)) {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Deck id invalid");
         }

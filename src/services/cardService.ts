@@ -1,4 +1,4 @@
-import Card, { ECardType, ICard, ICardResponse, IQueryCard, TCardDocument } from "../models/Card";
+import Card, { ICardResponse, ICreateCard, IQueryCard, TCardDocument } from "../models/Card";
 import { EHttpStatus, HttpError } from "../utils";
 import { LeanDocument, Types } from "mongoose";
 import { isCardOwned } from "./deckService";
@@ -10,18 +10,8 @@ import { isBefore } from "date-fns";
 
 export const getDeckCardsService = async (deckId: string) => Card.find({ deck: deckId }).lean().exec();
 
-export const createCardService = async (
-    email: string,
-    deckId: string,
-    front: string[],
-    back: string[],
-    example: string,
-    hasReversedCard: boolean,
-    type: ECardType
-) => {
-    const promises = [];
-    const cards = [];
-
+export const createCardService = async (email: string, deckId: string, card: ICreateCard) => {
+    const { type, back, front, example, reverseCard } = card;
     try {
         const cardDocument = new Card({
             deck: deckId,
@@ -30,28 +20,27 @@ export const createCardService = async (
             example,
             type,
         });
+        const promises = [];
         const newCard = await cardDocument.save();
-        cards.push(getCardResponse(newCard));
-        const promiseReview = createReviewService(email, cardDocument._id).catch((error) => {
-            cardDocument.deleteOne();
-            throw error;
-        });
-        promises.push(promiseReview);
 
-        if (hasReversedCard) {
-            const reversedCardDocument = await new Card(getNewReversedCard(cardDocument)).save();
-            const promiseReversedReview = createReviewService(email, reversedCardDocument._id).catch((error) => {
-                reversedCardDocument.deleteOne();
+        promises.push(
+            createReviewService(email, cardDocument._id, false).catch((error) => {
+                cardDocument.deleteOne();
                 throw error;
-            });
-
-            cards.push(getCardResponse(reversedCardDocument));
-            promises.push(promiseReversedReview);
+            })
+        );
+        if (reverseCard) {
+            promises.push(
+                createReviewService(email, cardDocument._id, true).catch((error) => {
+                    cardDocument.deleteOne();
+                    throw error;
+                })
+            );
         }
 
         await Promise.all(promises);
 
-        return cards;
+        return getCardResponse(newCard);
     } catch (error) {
         logError(error);
         throw error;
@@ -117,19 +106,13 @@ export const deleteCardService = async (email: string, cardId: string) =>
 
 export const searchCardsService = async (email: string, query: IPaginatedQuery<IQueryCard>) => {
     const { privateDecks, reviewedDecks } = await getUserDecks(email);
-    const { ids, name, deck, reverse, toReview, limit, skip } = query;
+    const { ids, name, deck, toReview, limit, skip } = query;
     const nameCondition = { $in: new RegExp(name ?? "", "i") };
-    let reverseCondition;
-
-    if (reverse !== undefined) {
-        reverseCondition = { $exists: reverse };
-    }
 
     const conditions = {
         _id: ids?.length ? { $in: ids } : undefined,
         deck: deck ?? { $in: privateDecks.concat(reviewedDecks) },
         $or: [{ front: nameCondition }, { back: nameCondition }, { example: nameCondition }],
-        referenceCard: reverseCondition,
     };
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -169,15 +152,6 @@ export const getCardsByDeckId = (deckId: string) =>
             return cardDocuments.map((cardDocument) => cardDocument._id.toString());
         });
 
-const getNewReversedCard = (card: TCardDocument): ICard => ({
-    deck: card.deck,
-    front: card.back,
-    back: card.front,
-    example: card.example,
-    referenceCard: card._id,
-    type: card.type,
-});
-
 const getCardResponse = (
     cardDocument: TCardDocument | LeanDocument<TCardDocument>,
     toReview?: boolean
@@ -188,6 +162,5 @@ const getCardResponse = (
     front: cardDocument.front,
     example: cardDocument.example,
     type: cardDocument.type,
-    referenceCard: cardDocument.referenceCard,
     toReview,
 });

@@ -20,7 +20,7 @@ import {
 import { ICardResponse, IQueryCard } from "../models/Card";
 import { IPaginatedQuery } from "./common/Pagination/IPagination";
 import express from "express";
-import { IReviewLevel, TReviewResponse } from "../models/Review";
+import { IReviewAction, TReviewResponse } from "../models/Review";
 import { reviewCardService } from "../services/reviewService";
 
 @Route("cards")
@@ -43,7 +43,6 @@ export class CardController extends Controller {
             const paginatedCardQuery: IPaginatedQuery<IQueryCard> = {
                 skip: skip ?? 0,
                 limit: limit ?? 10,
-                reverse,
                 toReview,
                 name,
             };
@@ -130,15 +129,15 @@ export class CardController extends Controller {
     @SuccessResponse(EHttpStatus.NO_CONTENT)
     async reviewCard(
         cardId: string,
-        @Body() body: IReviewLevel,
+        @Body() body: IReviewAction,
         @Request() request: express.Request
     ): Promise<TReviewResponse> {
-        const { reviewLevel } = body;
+        const { reviewLevel, isReverseReview } = body;
 
         try {
             const email = getCurrentUserEmail(request.headers.authorization);
 
-            return await reviewCardService(email, cardId, reviewLevel);
+            return await reviewCardService(email, cardId, reviewLevel, isReverseReview);
         } catch (error) {
             logError(error);
 

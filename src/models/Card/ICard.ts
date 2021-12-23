@@ -11,7 +11,6 @@ export interface ICard {
     back: string[];
     example: string;
     type: ECardType;
-    referenceCard?: String;
 }
 
 /**
@@ -20,7 +19,6 @@ export interface ICard {
  *     "front": ["こんいしはあ"],
  *     "back": ["Bonjour"],
  *     "example": "こんにちはみなさん、げんきですか。",
- *     "referenceCard": 123
  * }
  */
 export interface ICardResponse extends ICard {
@@ -34,7 +32,6 @@ export interface IQueryCard {
     ids?: string[];
     name?: string;
     toReview?: boolean;
-    reverse?: boolean;
     deck?: string;
 }
 

@@ -45,7 +45,7 @@ export const isCardOwned = async (email: string, cardId: string) => {
 };
 
 export const addCardService = async (email: string, deckId: string, card: ICreateCard) => {
-    const { front, back, example, reverseCard, type } = card;
+    const { front, back } = card;
     if (!(await isDeckExisting(deckId))) {
         throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
     }
@@ -58,20 +58,16 @@ export const addCardService = async (email: string, deckId: string, card: ICreat
         throw new HttpError(EHttpStatus.BAD_REQUEST, "The front and back fields cannot be empty");
     }
 
-    const cards = await createCardService(email, deckId, front, back, example, reverseCard, type);
-    const cardId = cards[0].id;
+    const newCard = await createCardService(email, deckId, card);
 
     await Deck.findOne({ _id: new Types.ObjectId(deckId) })
         .exec()
         .then((deck) => {
-            deck.cards.push(cardId);
-            if (reverseCard) {
-                deck.cards.push(cards[1].id);
-            }
+            deck.cards.push(newCard.id);
             deck.save();
         });
 
-    return cards;
+    return newCard;
 };
 
 export const createDeckService = async (userEmail: string, deckQuery: ICreateDeck) => {
@@ -109,7 +105,6 @@ export const getDeckService = async (email: string, id: string, skip) => {
             const paginatedCardQuery: IPaginatedQuery<IQueryCard> = {
                 ids: deckDocument.cards,
                 deck: deckDocument._id,
-                reverse: false,
                 limit: 50,
                 skip,
             };
@@ -194,7 +189,7 @@ const getDeckSummaryResponse = (
     name: deckDocument.name,
     description: deckDocument.description,
     tags: deckDocument.tags,
-    cards: deckDocument.cards,
+    cards: deckDocument.cards.length,
     isPrivate: deckDocument.isPrivate,
     defaultReviewReverseCard: deckDocument.defaultReviewReverseCard,
     defaultCardType: deckDocument.defaultCardType,
