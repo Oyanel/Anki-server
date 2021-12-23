@@ -8,7 +8,7 @@ import Deck, {
     TDeckDocument,
 } from "../models/Deck";
 import { EHttpStatus, HttpError } from "../utils";
-import { createCardService, getCardsByDeckId, searchCardsService } from "./cardService";
+import { createCardService, getCardIdsByDeckId, searchCardsService } from "./cardService";
 import { FilterQuery, LeanDocument, Types } from "mongoose";
 import { addDeckToProfile, getUserDecks, isDeckOwned, isDeckReviewed } from "./userService";
 import { IPaginatedQuery, IPagination } from "../api/common/Pagination/IPagination";
@@ -139,7 +139,7 @@ export const updateDeckService = async (email: string, id: string, deck: IEditDe
         });
 
     if (shouldDeleteReview) {
-        const cardIdList = await getCardsByDeckId(id);
+        const cardIdList = await getCardIdsByDeckId(id);
         await deleteReviewsService(cardIdList, email);
     }
 };
@@ -155,9 +155,13 @@ export const deleteDeckService = async (userEmail: string, id: string) =>
         deck.deleteOne();
     });
 
-export const searchDecksService = async (email: string, query: IQueryDeck, pagination: IPagination) => {
+export const searchDecksService = async (
+    email: string,
+    query: IQueryDeck,
+    pagination: IPagination
+): Promise<IDeckSummaryResponse[]> => {
     const { privateDecks, reviewedDecks } = await getUserDecks(email);
-    const { isReviewed, name, from, tags } = query;
+    const { isReviewed, name, from, tags, isToReview } = query;
     const ownDeckCondition: FilterQuery<IDeck> = isReviewed
         ? { _id: { $in: privateDecks.concat(reviewedDecks) } }
         : { _id: { $nin: privateDecks.concat(reviewedDecks) } };
@@ -171,14 +175,34 @@ export const searchDecksService = async (email: string, query: IQueryDeck, pagin
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return Deck.find(condition)
-        .skip(pagination.skip)
-        .limit(pagination.limit)
-        .lean()
-        .exec()
-        .then((decks) => {
-            return decks.map((deckDocument) => getDeckSummaryResponse(deckDocument, isReviewed));
-        });
+    const decks = await Deck.find(condition).skip(pagination.skip).limit(pagination.limit).exec();
+
+    const deckSummaryList = await Promise.all(
+        decks.map(async (deckDocument) => {
+            if (isToReview) {
+                const cardIdList = await getCardIdsByDeckId(deckDocument._id);
+                const cards = await searchCardsService(email, {
+                    ids: cardIdList,
+                    toReview: true,
+                    deck: deckDocument._id,
+                });
+
+                const cardIdsToReview = cards
+                    .filter((card) => card.toReview || card.reverseToReview)
+                    .map((card) => card.id.toString());
+
+                if (cardIdsToReview.length === 0) {
+                    return undefined;
+                }
+
+                deckDocument.cards = cardIdsToReview;
+            }
+
+            return getDeckSummaryResponse(deckDocument, isReviewed);
+        })
+    );
+
+    return deckSummaryList.filter((deck) => deck);
 };
 
 const getDeckSummaryResponse = (

@@ -69,6 +69,7 @@ export interface IQueryDeck {
     from?: string;
     tags?: string[];
     isReviewed?: boolean;
+    isToReview?: boolean;
 }
 
 /**

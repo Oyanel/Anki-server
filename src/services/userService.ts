@@ -5,7 +5,7 @@ import { SALT_ROUND } from "../constant";
 import { hashSync } from "bcryptjs";
 import { isDeckAccessible, isDeckExisting } from "./deckService";
 import { createReviewsService, deleteUserReviewsService } from "./reviewService";
-import { getCardsByDeckId, getCardService, getDeckCardsService } from "./cardService";
+import { getCardIdsByDeckId, getCardService, getDeckCardsService } from "./cardService";
 import { addMinutes, isBefore } from "date-fns";
 import { logError } from "../utils/error/error";
 import { changePasswordTemplate } from "../utils/email/changePasswordTemplate";
@@ -137,7 +137,7 @@ export const leaveDeckService = async (email: string, deckId: string) => {
             userDocument.save();
         });
 
-    const cardIdList = await getCardsByDeckId(deckId);
+    const cardIdList = await getCardIdsByDeckId(deckId);
     const reviewsPromise = deleteUserReviewsService(cardIdList, email);
 
     await Promise.all([userPromise, reviewsPromise]);

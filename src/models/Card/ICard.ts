@@ -19,11 +19,15 @@ export interface ICard {
  *     "front": ["こんいしはあ"],
  *     "back": ["Bonjour"],
  *     "example": "こんにちはみなさん、げんきですか。",
+ *     "toReview": "true",
+ *     "reverseToReview": "false",
+ *     "type": "TEXT"
  * }
  */
 export interface ICardResponse extends ICard {
     id: string;
     toReview?: boolean;
+    reverseToReview?: boolean;
 }
 
 export type TCardDocument = ICard & Document;

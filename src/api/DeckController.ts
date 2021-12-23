@@ -218,7 +218,8 @@ export class DeckController extends Controller {
         @Query() limit?: number,
         @Query() name?: string,
         @Query() from?: string,
-        @Query() tags?: string[]
+        @Query() tags?: string[],
+        @Query() isToReview?: boolean
     ): Promise<IDeckSummaryResponse[]> {
         try {
             const pagination: IPagination = { skip: skip ?? 0, limit: limit ?? 10 };
@@ -227,6 +228,7 @@ export class DeckController extends Controller {
                 name,
                 isReviewed,
                 tags,
+                isToReview,
             };
 
             const email = getCurrentUserEmail(request.headers.authorization);

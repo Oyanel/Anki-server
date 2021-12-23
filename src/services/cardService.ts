@@ -78,7 +78,7 @@ export const updateCardService = async (
         throw new HttpError(EHttpStatus.BAD_REQUEST, "The front and back fields cannot be empty");
     }
 
-    Card.findById(new Types.ObjectId(id))
+    return Card.findById(new Types.ObjectId(id))
         .exec()
         .then(async (cardDocument) => {
             if (!cardDocument) {
@@ -91,7 +91,7 @@ export const updateCardService = async (
         });
 };
 
-export const deleteCardService = async (email: string, cardId: string) =>
+export const deleteCardService = (email: string, cardId: string) =>
     Card.findById(new Types.ObjectId(cardId)).then(async (card) => {
         if (!card) {
             throw new HttpError(EHttpStatus.NOT_FOUND, "Card not found");
@@ -117,7 +117,7 @@ export const searchCardsService = async (email: string, query: IPaginatedQuery<I
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return await Card.find(conditions)
+    return Card.find(conditions)
         .skip(skip)
         .limit(limit)
         .lean()
@@ -129,22 +129,29 @@ export const searchCardsService = async (email: string, query: IPaginatedQuery<I
             const cardIds = cardDocuments.map((cardDocument) => cardDocument._id);
             const reviewList = await getReviews(email, cardIds, toReview);
 
-            return reviewList.map((review) => {
-                const card = cardDocuments.find(
-                    (cardDocument) => review.card.toString() === cardDocument._id.toString()
-                );
-                const isToReview = isBefore(review.nextReview, new Date());
+            return cardDocuments
+                .map((cardDocument) => {
+                    const reviews = reviewList.filter(
+                        (review) => review.card.toString() === cardDocument._id.toString()
+                    );
+                    const isToReview = reviews.some(
+                        (review) => !review.isReverse && isBefore(review.nextReview, new Date())
+                    );
+                    const isReverseToReview = reviews.some(
+                        (review) => review.isReverse && isBefore(review.nextReview, new Date())
+                    );
 
-                return getCardResponse(card, isToReview);
-            });
+                    return getCardResponse(cardDocument, isToReview, isReverseToReview);
+                })
+                .filter((card) => card.toReview || card.reverseToReview);
         });
 };
 
-export const getCardsByDeckId = (deckId: string) =>
+export const getCardIdsByDeckId = (deckId: string) =>
     Card.find({ deck: deckId })
         .lean()
         .exec()
-        .then(async (cardDocuments) => {
+        .then((cardDocuments) => {
             if (!cardDocuments) {
                 return [];
             }
@@ -154,7 +161,8 @@ export const getCardsByDeckId = (deckId: string) =>
 
 const getCardResponse = (
     cardDocument: TCardDocument | LeanDocument<TCardDocument>,
-    toReview?: boolean
+    toReview?: boolean,
+    reverseToReview?: boolean
 ): ICardResponse => ({
     id: cardDocument._id,
     deck: cardDocument.deck,
@@ -163,4 +171,5 @@ const getCardResponse = (
     example: cardDocument.example,
     type: cardDocument.type,
     toReview,
+    reverseToReview,
 });
