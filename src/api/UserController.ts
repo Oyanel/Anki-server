@@ -1,8 +1,21 @@
-import { IChangeLanguageRequest, IEmailRequest, IUpdateAccountRequest } from "../models/authentication/User";
+import { IChangeLanguageRequest, IEmailRequest, IProfile, IUpdateAccountRequest } from "../models/authentication/User";
 import { isLocale } from "validator";
 import { logError } from "../utils/error/error";
 import { EHttpStatus, getCurrentUserEmail, HttpError } from "../utils";
-import { Body, Controller, Delete, Post, Put, Request, Response, Route, Security, SuccessResponse, Tags } from "tsoa";
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Post,
+    Put,
+    Request,
+    Response,
+    Route,
+    Security,
+    SuccessResponse,
+    Tags,
+} from "tsoa";
 import {
     deleteUserAccount,
     changeLanguage,
@@ -21,7 +34,7 @@ import { validateUsername } from "../models/authentication/User/validate";
 export class UserController extends Controller {
     @Post("/change_language")
     @Response<HttpError>(EHttpStatus.BAD_REQUEST)
-    @SuccessResponse(EHttpStatus.CREATED)
+    @SuccessResponse(EHttpStatus.NO_CONTENT)
     public async changeLanguage(
         @Body() body: IChangeLanguageRequest,
         @Request() request: express.Request
@@ -44,7 +57,8 @@ export class UserController extends Controller {
     }
 
     @Delete("/delete")
-    @SuccessResponse(EHttpStatus.OK)
+    @SuccessResponse(EHttpStatus.NO_CONTENT)
+    @Response<HttpError>(EHttpStatus.NOT_FOUND)
     public async deleteAccount(@Request() request: express.Request): Promise<void> {
         const email = getCurrentUserEmail(request.headers.authorization);
 
@@ -58,7 +72,8 @@ export class UserController extends Controller {
     }
 
     @Put("/update")
-    @SuccessResponse(EHttpStatus.OK)
+    @Response<HttpError>(EHttpStatus.BAD_REQUEST)
+    @SuccessResponse(EHttpStatus.NO_CONTENT)
     public async update(@Body() body: IUpdateAccountRequest, @Request() request: express.Request): Promise<void> {
         const { newUsername } = body;
         const email = getCurrentUserEmail(request.headers.authorization);
@@ -77,8 +92,7 @@ export class UserController extends Controller {
     }
 
     @Post("/contact")
-    @Response<HttpError>(EHttpStatus.BAD_REQUEST)
-    @SuccessResponse(EHttpStatus.CREATED)
+    @SuccessResponse(EHttpStatus.NO_CONTENT)
     public async contact(@Body() body: IEmailRequest, @Request() request: express.Request): Promise<void> {
         const { reason, message } = body;
 
@@ -87,6 +101,20 @@ export class UserController extends Controller {
 
         try {
             await sendMailService(email, reason, message, profile.username);
+        } catch (error) {
+            logError(error);
+
+            throw error instanceof HttpError ? error : new HttpError();
+        }
+    }
+
+    @Get("/profile")
+    @SuccessResponse(EHttpStatus.OK)
+    public async getProfile(@Request() request: express.Request): Promise<IProfile> {
+        const email = getCurrentUserEmail(request.headers.authorization);
+
+        try {
+            return await getUserProfile(email);
         } catch (error) {
             logError(error);
 
