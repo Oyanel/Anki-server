@@ -1,7 +1,7 @@
 import { model, Schema, Types } from "mongoose";
 import { validateCardType, validateDescription, validateName, validateTags } from "./validate";
 import { TDeckDocument } from "./IDeck";
-import Card from "../Review";
+import Card from "../Card";
 import User from "../authentication/User";
 
 const DeckSchema = new Schema<TDeckDocument>(
@@ -41,11 +41,11 @@ const DeckSchema = new Schema<TDeckDocument>(
 );
 
 DeckSchema.pre("remove", async function (next) {
-    const cardPromise = Card.deleteOne({
-        _id: {
-            $in: this.cards,
-        },
-    }).exec();
+    const cardPromise = Card.find({
+        deck: this._id,
+    })
+        .exec()
+        .then(async (cardDocuments) => cardDocuments.map((cardDocument) => cardDocument.remove()));
 
     const userPromise = User.updateMany(
         {},

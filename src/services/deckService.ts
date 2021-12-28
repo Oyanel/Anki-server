@@ -155,6 +155,15 @@ export const deleteDeckService = async (userEmail: string, id: string) =>
         deck.deleteOne();
     });
 
+export const deleteDecksService = async (ids: string[]) =>
+    Deck.find({ _id: { $in: ids } })
+        .exec()
+        .then((deckDocuments) => {
+            deckDocuments.forEach((deckDocument) => {
+                deckDocument.remove();
+            });
+        });
+
 export const searchDecksService = async (
     email: string,
     query: IQueryDeck,

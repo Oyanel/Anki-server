@@ -53,6 +53,8 @@ export const refreshTokenService = async (refreshToken: string) => {
     return generateToken(tokenContent);
 };
 
+export const removeTokenService = async (user: string) => Token.deleteOne({ user }).exec();
+
 const getUserResponse = (userDocument: TUserDocument | LeanDocument<TUserDocument>): IUserResponse => ({
     username: userDocument.profile.username,
     email: userDocument.email,

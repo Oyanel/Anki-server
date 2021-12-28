@@ -3,12 +3,13 @@ import Code from "../models/authentication/Otp";
 import { EHttpStatus, HttpError, sendEmail } from "../utils";
 import { SALT_ROUND } from "../constant";
 import { hashSync } from "bcryptjs";
-import { isDeckAccessible, isDeckExisting } from "./deckService";
+import { deleteDecksService, isDeckAccessible, isDeckExisting } from "./deckService";
 import { createReviewsService, deleteUserReviewsService } from "./reviewService";
 import { getCardIdsByDeckId, getCardService, getDeckCardsService } from "./cardService";
 import { addMinutes, isBefore } from "date-fns";
 import { logError } from "../utils/error/error";
 import { changePasswordTemplate } from "../utils/email/changePasswordTemplate";
+import { removeTokenService } from "./authService";
 
 const isUserExisting = (email: string) => User.countDocuments({ email }).then((count) => count > 0);
 
@@ -165,9 +166,27 @@ export const changeLanguage = async (email: string, language: string) =>
             user.save();
         });
 
+export const deleteUserAccount = async (email: string) => {
+    let user;
+
+    await User.findOne({ email })
+        .exec()
+        .then((userDocument) => {
+            if (!userDocument) {
+                throw new HttpError(EHttpStatus.NOT_FOUND, "User not found");
+            }
+
+            user = userDocument;
+        });
+
+    const { privateDecks } = await getUserDecks(email);
+
+    return Promise.all([removeTokenService(email), deleteDecksService(privateDecks), user.remove()]);
+};
+
 const createProfile = (username: string): IProfile => ({
     username,
     privateDecks: [],
     reviewedDecks: [],
-    language: "EN",
+    language: "en",
 });
