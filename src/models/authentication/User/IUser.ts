@@ -2,6 +2,7 @@ import { Document } from "mongoose";
 
 export interface IProfile {
     username: string;
+    language: string;
     privateDecks: string[];
     reviewedDecks: string[];
 }
@@ -54,6 +55,10 @@ export interface IUserRegistration extends IUserBase {
 
 export interface IUser extends IUserBase {
     profile: IProfile;
+}
+
+export interface IChangeLanguageRequest {
+    language: string;
 }
 
 export enum EOTPReason {

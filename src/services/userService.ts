@@ -157,4 +157,17 @@ export const addDeckToProfile = async (deckId: string, email: string) =>
             user.save();
         });
 
-const createProfile = (username: string): IProfile => ({ username, privateDecks: [], reviewedDecks: [] });
+export const changeLanguage = async (email: string, language: string) =>
+    User.findOne({ email })
+        .exec()
+        .then((user) => {
+            user.profile.language = language;
+            user.save();
+        });
+
+const createProfile = (username: string): IProfile => ({
+    username,
+    privateDecks: [],
+    reviewedDecks: [],
+    language: "EN",
+});

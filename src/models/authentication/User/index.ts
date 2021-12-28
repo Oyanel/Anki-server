@@ -19,6 +19,7 @@ const UserSchema = new Schema<TUserDocument>(
             username: String,
             privateDecks: [Types.ObjectId],
             reviewedDecks: [Types.ObjectId],
+            language: String,
         },
     },
     { timestamps: true }
