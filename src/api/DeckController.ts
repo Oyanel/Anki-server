@@ -29,7 +29,7 @@ import {
 import express from "express";
 import { ICard, ICreateCard } from "../models/Card";
 import { ICreateDeck, IDeckResponse, IDeckSummaryResponse, IEditDeck, IQueryDeck } from "../models/Deck";
-import { IPagination } from "./common/Pagination/IPagination";
+import { IPaginatedResponse, IPagination } from "./common/Pagination/IPagination";
 import { formatISO, parse } from "date-fns";
 import { joinDeckService, leaveDeckService } from "../services/userService";
 import { DATE_FORMAT } from "../constant";
@@ -220,7 +220,7 @@ export class DeckController extends Controller {
         @Query() from?: string,
         @Query() tags?: string[],
         @Query() isToReview?: boolean
-    ): Promise<IDeckSummaryResponse[]> {
+    ): Promise<IPaginatedResponse<IDeckSummaryResponse[]>> {
         try {
             const pagination: IPagination = { skip: skip ?? 0, limit: limit ?? 10 };
             const query: IQueryDeck = {

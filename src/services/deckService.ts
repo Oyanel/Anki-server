@@ -11,7 +11,7 @@ import { EHttpStatus, HttpError } from "../utils";
 import { createCardService, getCardIdsByDeckId, searchCardsService } from "./cardService";
 import { FilterQuery, LeanDocument, Types } from "mongoose";
 import { addDeckToProfile, getUserDecks, isDeckOwned, isDeckReviewed } from "./userService";
-import { IPaginatedQuery, IPagination } from "../api/common/Pagination/IPagination";
+import { IPaginatedQuery, IPaginatedResponse, IPagination } from "../api/common/Pagination/IPagination";
 import { ICardResponse, ICreateCard, IQueryCard } from "../models/Card";
 import { deleteReviewsService } from "./reviewService";
 
@@ -168,7 +168,7 @@ export const searchDecksService = async (
     email: string,
     query: IQueryDeck,
     pagination: IPagination
-): Promise<IDeckSummaryResponse[]> => {
+): Promise<IPaginatedResponse<IDeckSummaryResponse[]>> => {
     const { privateDecks, reviewedDecks } = await getUserDecks(email);
     const { isReviewed, name, from, tags, isToReview } = query;
     const ownDeckCondition: FilterQuery<IDeck> = isReviewed
@@ -184,6 +184,9 @@ export const searchDecksService = async (
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
+    const deckCount = Deck.countDocuments(condition).exec();
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const decks = await Deck.find(condition).skip(pagination.skip).limit(pagination.limit).exec();
 
     const deckSummaryList = await Promise.all(
@@ -196,7 +199,7 @@ export const searchDecksService = async (
                     deck: deckDocument._id,
                 });
 
-                const cardIdsToReview = cards
+                const cardIdsToReview = cards.content
                     .filter((card) => card.toReview || card.reverseToReview)
                     .map((card) => card.id.toString());
 
@@ -211,7 +214,10 @@ export const searchDecksService = async (
         })
     );
 
-    return deckSummaryList.filter((deck) => deck);
+    return {
+        content: deckSummaryList.filter((deck) => deck),
+        totalElements: await deckCount,
+    };
 };
 
 const getDeckSummaryResponse = (
@@ -231,7 +237,7 @@ const getDeckSummaryResponse = (
 
 const getDeckResponse = (
     deckDocument: TDeckDocument | LeanDocument<TDeckDocument>,
-    cards: ICardResponse[],
+    cards: IPaginatedResponse<ICardResponse[]>,
     isReviewed
 ): IDeckResponse => {
     return {
@@ -239,7 +245,10 @@ const getDeckResponse = (
         name: deckDocument.name,
         description: deckDocument.description,
         tags: deckDocument.tags,
-        cards: cards,
+        cards: {
+            content: cards.content,
+            totalElements: cards.totalElements,
+        },
         isPrivate: deckDocument.isPrivate,
         defaultReviewReverseCard: deckDocument.defaultReviewReverseCard,
         defaultCardType: deckDocument.defaultCardType,

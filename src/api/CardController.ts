@@ -18,7 +18,7 @@ import {
     Body,
 } from "tsoa";
 import { ICardResponse, IQueryCard } from "../models/Card";
-import { IPaginatedQuery } from "./common/Pagination/IPagination";
+import { IPaginatedQuery, IPaginatedResponse } from "./common/Pagination/IPagination";
 import express from "express";
 import { IReviewAction, TReviewResponse } from "../models/Review";
 import { reviewCardService } from "../services/reviewService";
@@ -37,7 +37,7 @@ export class CardController extends Controller {
         @Query() toReview?: boolean,
         @Query() reverse?: boolean,
         @Query() name?: string
-    ): Promise<ICardResponse[]> {
+    ): Promise<IPaginatedResponse<ICardResponse[]>> {
         try {
             const email = getCurrentUserEmail(request.headers.authorization);
             const paginatedCardQuery: IPaginatedQuery<IQueryCard> = {

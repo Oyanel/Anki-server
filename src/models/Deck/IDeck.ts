@@ -1,5 +1,6 @@
 import { Document } from "mongoose";
 import { ECardType, ICardResponse } from "../Card";
+import { IPaginatedResponse } from "../../api/common/Pagination/IPagination";
 
 /**
  * @example {
@@ -60,7 +61,7 @@ export interface IDeckSummaryResponse extends Omit<IDeck, "cards"> {
  * }
  */
 export interface IDeckResponse extends Omit<IDeckSummaryResponse, "cards"> {
-    cards: ICardResponse[];
+    cards: IPaginatedResponse<ICardResponse[]>;
     isReviewed: boolean;
 }
 

@@ -3,7 +3,7 @@ import { EHttpStatus, HttpError } from "../utils";
 import { LeanDocument, Types } from "mongoose";
 import { isCardOwned } from "./deckService";
 import { logError } from "../utils/error/error";
-import { IPaginatedQuery } from "../api/common/Pagination/IPagination";
+import { IPaginatedQuery, IPaginatedResponse } from "../api/common/Pagination/IPagination";
 import { getUserDecks } from "./userService";
 import { createReviewService, getReviews } from "./reviewService";
 import { isBefore } from "date-fns";
@@ -104,7 +104,10 @@ export const deleteCardService = (email: string, cardId: string) =>
         card.deleteOne();
     });
 
-export const searchCardsService = async (email: string, query: IPaginatedQuery<IQueryCard>) => {
+export const searchCardsService = async (
+    email: string,
+    query: IPaginatedQuery<IQueryCard>
+): Promise<IPaginatedResponse<ICardResponse[]>> => {
     const { privateDecks, reviewedDecks } = await getUserDecks(email);
     const { ids, name, deck, toReview, limit, skip } = query;
     const nameCondition = { $in: new RegExp(name ?? "", "i") };
@@ -117,20 +120,24 @@ export const searchCardsService = async (email: string, query: IPaginatedQuery<I
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return Card.find(conditions)
-        .skip(skip)
-        .limit(limit)
-        .lean()
-        .exec()
-        .then(async (cardDocuments) => {
-            if (!cardDocuments) {
-                return [];
-            }
-            const cardIds = cardDocuments.map((cardDocument) => cardDocument._id);
-            const reviewList = await getReviews(email, cardIds, toReview);
+    const cardCount = Card.countDocuments(conditions).exec();
 
-            return cardDocuments
-                .map((cardDocument) => {
+    return {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        content: await Card.find(conditions)
+            .skip(skip)
+            .limit(limit)
+            .lean()
+            .exec()
+            .then(async (cardDocuments) => {
+                if (!cardDocuments) {
+                    return [];
+                }
+                const cardIds = cardDocuments.map((cardDocument) => cardDocument._id);
+                const reviewList = await getReviews(email, cardIds, toReview);
+
+                const cards = cardDocuments.map((cardDocument) => {
                     const reviews = reviewList.filter(
                         (review) => review.card.toString() === cardDocument._id.toString()
                     );
@@ -142,9 +149,16 @@ export const searchCardsService = async (email: string, query: IPaginatedQuery<I
                     );
 
                     return getCardResponse(cardDocument, isToReview, isReverseToReview);
-                })
-                .filter((card) => card.toReview || card.reverseToReview);
-        });
+                });
+
+                if (toReview) {
+                    return cards.filter((card) => card.toReview || card.reverseToReview);
+                }
+
+                return cards;
+            }),
+        totalElements: await cardCount,
+    };
 };
 
 export const getCardIdsByDeckId = (deckId: string) =>
