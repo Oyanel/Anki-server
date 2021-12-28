@@ -9,8 +9,12 @@ export const validateDescription = (text: string) => {
     return textRegex.test(text);
 };
 
+export const validateTag = (tag: string) => {
+    return tag.length <= 20 && textRegex.test(tag);
+};
+
 export const validateTags = (tags: string[]) => {
-    return tags.every((tag) => tag.length <= 20 && textRegex.test(tag));
+    return tags.every((tag) => validateTag(tag));
 };
 
 export const validateCardType = (cardType: string) => {

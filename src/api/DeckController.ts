@@ -5,6 +5,7 @@ import {
     createDeckService,
     deleteDeckService,
     getDeckService,
+    getTagsService,
     searchDecksService,
     updateDeckService,
 } from "../services/deckService";
@@ -40,6 +41,17 @@ import { DATE_FORMAT } from "../constant";
 @Response<HttpError>(EHttpStatus.BAD_REQUEST)
 @Response<HttpError>(EHttpStatus.INTERNAL_ERROR)
 export class DeckController extends Controller {
+    @Get("tags")
+    async getTags(@Query() tag?: string): Promise<string[]> {
+        try {
+            return await getTagsService(tag);
+        } catch (error) {
+            logError(error);
+
+            throw error instanceof HttpError ? error : new HttpError();
+        }
+    }
+
     @Post("{deckId}/add")
     @Response<HttpError>(EHttpStatus.NOT_FOUND)
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)

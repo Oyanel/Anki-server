@@ -7,6 +7,7 @@ import Deck, {
     IQueryDeck,
     TDeckDocument,
 } from "../models/Deck";
+import Tag from "../models/Tag";
 import { EHttpStatus, HttpError } from "../utils";
 import { createCardService, getCardIdsByDeckId, searchCardsService } from "./cardService";
 import { FilterQuery, LeanDocument, Types } from "mongoose";
@@ -82,6 +83,7 @@ export const createDeckService = async (userEmail: string, deckQuery: ICreateDec
         defaultReviewReverseCard,
     };
 
+    await addTagsService(tags);
     const deck = await Deck.create<IDeck>(newDeck).then((deckDocument) => getDeckSummaryResponse(deckDocument, true));
 
     await addDeckToProfile(deck.id, userEmail);
@@ -163,6 +165,28 @@ export const deleteDecksService = async (ids: string[]) =>
                 deckDocument.remove();
             });
         });
+
+export const getTagsService = async (tag?: string): Promise<string[]> =>
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    Tag.find({
+        tag: { $regex: new RegExp(tag ?? "", "i") },
+    })
+        .exec()
+        .then((tagDocuments) => tagDocuments.map((tagDocument) => tagDocument.tag));
+
+export const addTagsService = async (tags?: string[]) =>
+    Tag.insertMany(
+        tags.map((tag) => new Tag({ tag: tag.toLowerCase() })),
+        { ordered: false }
+    ).catch((err) => {
+        //skip duplicate error
+        if (err.writeErrors) {
+            return;
+        }
+
+        throw err;
+    });
 
 export const searchDecksService = async (
     email: string,
