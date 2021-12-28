@@ -1,5 +1,13 @@
 import { Document } from "mongoose";
 
+/**
+ * @example {
+ *  "username": "username",
+ *  "language": "en",
+ *  "privateDecks": ["123"],
+ *  "reviewedDecks": ["123"]
+ * }
+ */
 export interface IProfile {
     username: string;
     language: string;
@@ -68,6 +76,11 @@ export interface IUser extends IUserBase {
     profile: IProfile;
 }
 
+/**
+ * @example {
+ *  "language": "en"
+ * }
+ */
 export interface IChangeLanguageRequest {
     language: string;
 }
@@ -86,6 +99,11 @@ export interface IUserResponse {
     username: IProfile["username"];
 }
 
+/**
+ * @example {
+ *  "newUsername": "Johnny"
+ * }
+ */
 export interface IUpdateAccountRequest {
     newUsername?: IProfile["username"];
 }
