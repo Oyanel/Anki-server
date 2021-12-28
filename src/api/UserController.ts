@@ -1,9 +1,15 @@
-import { IChangeLanguageRequest, IUpdateAccountRequest } from "../models/authentication/User";
+import { IChangeLanguageRequest, IEmailRequest, IUpdateAccountRequest } from "../models/authentication/User";
 import { isLocale } from "validator";
 import { logError } from "../utils/error/error";
 import { EHttpStatus, getCurrentUserEmail, HttpError } from "../utils";
 import { Body, Controller, Delete, Post, Put, Request, Response, Route, Security, SuccessResponse, Tags } from "tsoa";
-import { deleteUserAccount, changeLanguage, updateProfile } from "../services/userService";
+import {
+    deleteUserAccount,
+    changeLanguage,
+    updateProfile,
+    sendMailService,
+    getUserProfile,
+} from "../services/userService";
 import express from "express";
 import { validateUsername } from "../models/authentication/User/validate";
 
@@ -63,6 +69,24 @@ export class UserController extends Controller {
 
         try {
             await updateProfile(email, newUsername);
+        } catch (error) {
+            logError(error);
+
+            throw error instanceof HttpError ? error : new HttpError();
+        }
+    }
+
+    @Post("/contact")
+    @Response<HttpError>(EHttpStatus.BAD_REQUEST)
+    @SuccessResponse(EHttpStatus.CREATED)
+    public async contact(@Body() body: IEmailRequest, @Request() request: express.Request): Promise<void> {
+        const { reason, message } = body;
+
+        const email = getCurrentUserEmail(request.headers.authorization);
+        const profile = await getUserProfile(email);
+
+        try {
+            await sendMailService(email, reason, message, profile.username);
         } catch (error) {
             logError(error);
 

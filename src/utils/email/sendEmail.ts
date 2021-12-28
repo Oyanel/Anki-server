@@ -14,7 +14,7 @@ export async function sendEmail(receivers: string[], subject: string, message: s
 
     // send mail with defined transport object
     const info = await transporter.sendMail({
-        from: sender ?? `Ryoumengo <${process.env.EMAIL_USER}>`,
+        from: sender ?? `${process.env.APP_NAME} <${process.env.EMAIL_USER}>`,
         to: receivers.join(", "),
         subject: subject,
         html: message,

@@ -44,8 +44,19 @@ export interface IOtpRequest {
 
 /**
  * @example {
+ *  "reason": "CONTACT",
+ *  "message": "Hey, how is it going?"
+ * }
+ */
+export interface IEmailRequest {
+    reason: EEMailReason;
+    message?: string;
+}
+
+/**
+ * @example {
  *  "email": "user.test@test.com",
- *  "password": "LfasefSLEFs2d*"
+ *  "password": "LfasefSLEFs2d*",
  *  "username": "Johnny"
  * }
  */
@@ -59,6 +70,11 @@ export interface IUser extends IUserBase {
 
 export interface IChangeLanguageRequest {
     language: string;
+}
+
+export enum EEMailReason {
+    CONTACT = "CONTACT",
+    REPORT_BUG = "REPORT_BUG",
 }
 
 export enum EOTPReason {

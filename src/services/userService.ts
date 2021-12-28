@@ -1,4 +1,11 @@
-import User, { EOTPReason, IProfile, IUser, IUserRegistration, TUserDecks } from "../models/authentication/User";
+import User, {
+    EEMailReason,
+    EOTPReason,
+    IProfile,
+    IUser,
+    IUserRegistration,
+    TUserDecks,
+} from "../models/authentication/User";
 import Code from "../models/authentication/Otp";
 import { EHttpStatus, HttpError, sendEmail } from "../utils";
 import { SALT_ROUND } from "../constant";
@@ -64,6 +71,27 @@ export const changeLostPassword = async (code: number, password: string) => {
 
             await codeDocument.deleteOne();
         });
+};
+
+export const getUserProfile = async (email: string) =>
+    User.findOne({ email })
+        .exec()
+        .then(async (userDocument) => userDocument.profile);
+
+export const sendMailService = async (email: string, reason: EEMailReason, message?: string, username?: string) => {
+    try {
+        const subject = reason === EEMailReason.REPORT_BUG ? "Bug report" : "Contact";
+        await sendEmail(
+            [`${process.env.APP_NAME} <${process.env.EMAIL_USER}>`],
+            subject,
+            message,
+            `${username} <${email}>`
+        );
+    } catch (error) {
+        logError(error);
+
+        throw new HttpError(EHttpStatus.INTERNAL_ERROR, "Error occurred while sending the email");
+    }
 };
 
 export const createOTP = async (email: string, reason: EOTPReason) => {
