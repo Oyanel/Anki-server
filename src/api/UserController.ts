@@ -1,10 +1,11 @@
-import { IChangeLanguageRequest } from "../models/authentication/User";
+import { IChangeLanguageRequest, IUpdateAccountRequest } from "../models/authentication/User";
 import { isLocale } from "validator";
 import { logError } from "../utils/error/error";
 import { EHttpStatus, getCurrentUserEmail, HttpError } from "../utils";
-import { Body, Controller, Delete, Post, Request, Response, Route, Security, SuccessResponse, Tags } from "tsoa";
-import { deleteUserAccount, changeLanguage } from "../services/userService";
+import { Body, Controller, Delete, Post, Put, Request, Response, Route, Security, SuccessResponse, Tags } from "tsoa";
+import { deleteUserAccount, changeLanguage, updateProfile } from "../services/userService";
 import express from "express";
+import { validateUsername } from "../models/authentication/User/validate";
 
 @Route("user")
 @Tags("User")
@@ -43,6 +44,25 @@ export class UserController extends Controller {
 
         try {
             await deleteUserAccount(email);
+        } catch (error) {
+            logError(error);
+
+            throw error instanceof HttpError ? error : new HttpError();
+        }
+    }
+
+    @Put("/update")
+    @SuccessResponse(EHttpStatus.OK)
+    public async update(@Body() body: IUpdateAccountRequest, @Request() request: express.Request): Promise<void> {
+        const { newUsername } = body;
+        const email = getCurrentUserEmail(request.headers.authorization);
+
+        if (!validateUsername(newUsername)) {
+            throw new HttpError(EHttpStatus.BAD_REQUEST, "Username incorrect");
+        }
+
+        try {
+            await updateProfile(email, newUsername);
         } catch (error) {
             logError(error);
 

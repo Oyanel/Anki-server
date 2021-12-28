@@ -70,4 +70,8 @@ export interface IUserResponse {
     username: IProfile["username"];
 }
 
+export interface IUpdateAccountRequest {
+    newUsername?: IProfile["username"];
+}
+
 export type TUserDocument = IUser & Document;

@@ -184,6 +184,18 @@ export const deleteUserAccount = async (email: string) => {
     return Promise.all([removeTokenService(email), deleteDecksService(privateDecks), user.remove()]);
 };
 
+export const updateProfile = async (email: string, newUsername: string) =>
+    User.findOne({ email })
+        .exec()
+        .then((userDocument) => {
+            if (!userDocument) {
+                throw new HttpError(EHttpStatus.NOT_FOUND, "User not found");
+            }
+
+            userDocument.profile.username = newUsername;
+            userDocument.save();
+        });
+
 const createProfile = (username: string): IProfile => ({
     username,
     privateDecks: [],
