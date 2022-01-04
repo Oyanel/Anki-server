@@ -3,7 +3,7 @@ import Deck, {
     IDeck,
     IDeckResponse,
     IDeckSummaryResponse,
-    IEditDeck,
+    TEditDeck,
     IQueryDeck,
     TDeckDocument,
 } from "../models/Deck";
@@ -84,7 +84,9 @@ export const createDeckService = async (userEmail: string, deckQuery: ICreateDec
     };
 
     await addTagsService(tags);
-    const deck = await Deck.create<IDeck>(newDeck).then((deckDocument) => getDeckSummaryResponse(deckDocument, true));
+    const deck = await Deck.create<IDeck>(newDeck).then((deckDocument) =>
+        getDeckSummaryResponse(deckDocument, true, true)
+    );
 
     await addDeckToProfile(deck.id, userEmail);
 
@@ -113,11 +115,16 @@ export const getDeckService = async (email: string, id: string, skip) => {
 
             const cards = await searchCardsService(email, paginatedCardQuery);
 
-            return getDeckResponse(deckDocument, cards, isDeckReviewed(email, id));
+            return getDeckResponse(
+                deckDocument,
+                cards,
+                isDeckReviewed(email, id),
+                await isDeckOwned(email, deckDocument._id.toString())
+            );
         });
 };
 
-export const updateDeckService = async (email: string, id: string, deck: IEditDeck) => {
+export const updateDeckService = async (email: string, id: string, deck: TEditDeck) => {
     const { defaultCardType, defaultReviewReverseCard, name, description, tags, isPrivate } = deck;
     let shouldDeleteReview = false;
     if (!(await isDeckOwned(email, id))) {
@@ -130,7 +137,8 @@ export const updateDeckService = async (email: string, id: string, deck: IEditDe
             if (!deckDocument) {
                 throw new HttpError(EHttpStatus.NOT_FOUND, "Deck not found");
             }
-            shouldDeleteReview = deckDocument.isPrivate !== isPrivate;
+
+            shouldDeleteReview = !deckDocument.isPrivate && deck.isPrivate;
             deckDocument.name = name;
             deckDocument.description = description;
             deckDocument.isPrivate = isPrivate;
@@ -195,11 +203,11 @@ export const searchDecksService = async (
 ): Promise<IPaginatedResponse<IDeckSummaryResponse[]>> => {
     const { privateDecks, reviewedDecks } = await getUserDecks(email);
     const { isReviewed, name, from, tags, isToReview } = query;
-    const ownDeckCondition: FilterQuery<IDeck> = isReviewed
+    const reviewedDeckCondition: FilterQuery<IDeck> = isReviewed
         ? { _id: { $in: privateDecks.concat(reviewedDecks) } }
         : { _id: { $nin: privateDecks.concat(reviewedDecks) } };
     const condition = {
-        ...ownDeckCondition,
+        ...reviewedDeckCondition,
         isPrivate: isReviewed ? undefined : false,
         name: { $regex: new RegExp(name ?? "", "i") },
         createdAt: from ? { $gt: from } : undefined,
@@ -234,7 +242,7 @@ export const searchDecksService = async (
                 deckDocument.cards = cardIdsToReview;
             }
 
-            return getDeckSummaryResponse(deckDocument, isReviewed);
+            return getDeckSummaryResponse(deckDocument, isReviewed, privateDecks.includes(deckDocument._id.toString()));
         })
     );
 
@@ -246,7 +254,8 @@ export const searchDecksService = async (
 
 const getDeckSummaryResponse = (
     deckDocument: TDeckDocument | LeanDocument<TDeckDocument>,
-    isReviewed: boolean
+    isReviewed: boolean,
+    isOwn: boolean
 ): IDeckSummaryResponse => ({
     id: deckDocument._id,
     name: deckDocument.name,
@@ -257,12 +266,14 @@ const getDeckSummaryResponse = (
     defaultReviewReverseCard: deckDocument.defaultReviewReverseCard,
     defaultCardType: deckDocument.defaultCardType,
     isReviewed,
+    isOwn,
 });
 
 const getDeckResponse = (
     deckDocument: TDeckDocument | LeanDocument<TDeckDocument>,
     cards: IPaginatedResponse<ICardResponse[]>,
-    isReviewed
+    isReviewed,
+    isOwn: boolean
 ): IDeckResponse => {
     return {
         id: deckDocument._id,
@@ -277,5 +288,6 @@ const getDeckResponse = (
         defaultReviewReverseCard: deckDocument.defaultReviewReverseCard,
         defaultCardType: deckDocument.defaultCardType,
         isReviewed,
+        isOwn,
     };
 };

@@ -29,7 +29,7 @@ import {
 } from "tsoa";
 import express from "express";
 import { ICard, ICreateCard } from "../models/Card";
-import { ICreateDeck, IDeckResponse, IDeckSummaryResponse, IEditDeck, IQueryDeck } from "../models/Deck";
+import { ICreateDeck, IDeckResponse, IDeckSummaryResponse, TEditDeck, IQueryDeck } from "../models/Deck";
 import { IPaginatedResponse, IPagination } from "./common/Pagination/IPagination";
 import { formatISO, parse } from "date-fns";
 import { joinDeckService, leaveDeckService } from "../services/userService";
@@ -176,7 +176,7 @@ export class DeckController extends Controller {
     @Response<HttpError>(EHttpStatus.NOT_FOUND)
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
     @SuccessResponse(EHttpStatus.NO_CONTENT)
-    async updateDeck(deckId: string, @Body() deck: IEditDeck, @Request() request: express.Request): Promise<void> {
+    async updateDeck(deckId: string, @Body() deck: TEditDeck, @Request() request: express.Request): Promise<void> {
         const { name, description, tags, defaultCardType } = deck;
 
         if (!isValidObjectId(deckId) || !validateTags(tags) || !validateCardType(defaultCardType)) {

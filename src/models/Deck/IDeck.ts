@@ -39,6 +39,7 @@ export interface IDeckSummaryResponse extends Omit<IDeck, "cards"> {
     id: string;
     cards: number;
     isReviewed: boolean;
+    isOwn: boolean;
 }
 
 /**
@@ -102,8 +103,6 @@ export interface ICreateDeck {
  *     "defaultReviewReverseCard": true
  * }
  */
-export interface IEditDeck extends Omit<ICreateDeck, "isPrivate"> {
-    isPrivate: true;
-}
+export type TEditDeck = ICreateDeck;
 
 export type TDeckDocument = IDeck & Document;
