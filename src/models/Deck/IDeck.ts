@@ -33,6 +33,7 @@ export interface IDeck {
  *     "isReviewed": true,
  *     "defaultCardType": "TEXT",
  *     "defaultReviewReverseCard": false
+ *     "isOwn": true
  * }
  */
 export interface IDeckSummaryResponse extends Omit<IDeck, "cards"> {
@@ -52,13 +53,13 @@ export interface IDeckSummaryResponse extends Omit<IDeck, "cards"> {
  *     "isReviewed": true,
  *     "defaultCardType": "TEXT",
  *     "defaultReviewReverseCard": false,
- *     "cards": {
+ *     "cards": [{
  *          "id": "123d1",
  *          "front": ["こんいしはあ"],
  *          "back": ["Bonjour"],
  *          "example": "こんにちはみなさん、げんきですか。",
  *          "isReversed": false
- *      }
+ *      }]
  * }
  */
 export interface IDeckResponse extends Omit<IDeckSummaryResponse, "cards"> {
