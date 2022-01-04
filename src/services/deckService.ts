@@ -118,7 +118,7 @@ export const getDeckService = async (email: string, id: string, skip) => {
             return getDeckResponse(
                 deckDocument,
                 cards,
-                isDeckReviewed(email, id),
+                await isDeckReviewed(email, id),
                 await isDeckOwned(email, deckDocument._id.toString())
             );
         });
@@ -272,7 +272,7 @@ const getDeckSummaryResponse = (
 const getDeckResponse = (
     deckDocument: TDeckDocument | LeanDocument<TDeckDocument>,
     cards: IPaginatedResponse<ICardResponse[]>,
-    isReviewed,
+    isReviewed: boolean,
     isOwn: boolean
 ): IDeckResponse => {
     return {
