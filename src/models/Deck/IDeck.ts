@@ -41,6 +41,7 @@ export interface IDeckSummaryResponse extends Omit<IDeck, "cards"> {
     cards: number;
     isReviewed: boolean;
     isOwn: boolean;
+    isToReview?: boolean;
 }
 
 /**

@@ -85,7 +85,7 @@ export const createDeckService = async (userEmail: string, deckQuery: ICreateDec
 
     await addTagsService(tags);
     const deck = await Deck.create<IDeck>(newDeck).then((deckDocument) =>
-        getDeckSummaryResponse(deckDocument, true, true)
+        getDeckSummaryResponse(deckDocument, true, true, false)
     );
 
     await addDeckToProfile(deck.id, userEmail);
@@ -115,11 +115,18 @@ export const getDeckService = async (email: string, id: string, skip) => {
 
             const cards = await searchCardsService(email, paginatedCardQuery);
 
+            const cardIdsToReview = cards.content
+                .filter((card) => card.toReview || card.reverseToReview)
+                .map((card) => card.id.toString());
+
+            const shouldReview = cardIdsToReview.length !== 0;
+
             return getDeckResponse(
                 deckDocument,
                 cards,
                 await isDeckReviewed(email, id),
-                await isDeckOwned(email, deckDocument._id.toString())
+                await isDeckOwned(email, deckDocument._id.toString()),
+                shouldReview
             );
         });
 };
@@ -223,39 +230,47 @@ export const searchDecksService = async (
 
     const deckSummaryList = await Promise.all(
         decks.map(async (deckDocument) => {
+            const cards = await searchCardsService(email, {
+                ids: deckDocument.cards.map((card) => card.toString()),
+                toReview: isToReview,
+                deck: deckDocument._id,
+            });
+
+            const cardIdsToReview = cards.content
+                .filter((card) => card.toReview || card.reverseToReview)
+                .map((card) => card.id.toString());
+
+            const shouldReview = cardIdsToReview.length !== 0;
+
             if (isToReview) {
-                const cardIdList = await getCardIdsByDeckId(deckDocument._id);
-                const cards = await searchCardsService(email, {
-                    ids: cardIdList,
-                    toReview: true,
-                    deck: deckDocument._id,
-                });
-
-                const cardIdsToReview = cards.content
-                    .filter((card) => card.toReview || card.reverseToReview)
-                    .map((card) => card.id.toString());
-
-                if (cardIdsToReview.length === 0) {
-                    return undefined;
-                }
-
                 deckDocument.cards = cardIdsToReview;
             }
 
-            return getDeckSummaryResponse(deckDocument, isReviewed, privateDecks.includes(deckDocument._id.toString()));
+            return getDeckSummaryResponse(
+                deckDocument,
+                isReviewed,
+                privateDecks.includes(deckDocument._id.toString()),
+                shouldReview
+            );
         })
     );
 
     return {
-        content: deckSummaryList.filter((deck) => deck),
-        totalElements: await deckCount,
+        content:
+            isToReview === undefined
+                ? deckSummaryList
+                : deckSummaryList.filter((deck) => isToReview === deck.isToReview),
+        totalElements: isToReview
+            ? deckSummaryList.filter((deck) => isToReview === deck.isToReview).length
+            : await deckCount,
     };
 };
 
 const getDeckSummaryResponse = (
     deckDocument: TDeckDocument | LeanDocument<TDeckDocument>,
     isReviewed: boolean,
-    isOwn: boolean
+    isOwn: boolean,
+    isToReview: boolean
 ): IDeckSummaryResponse => ({
     id: deckDocument._id,
     name: deckDocument.name,
@@ -267,27 +282,28 @@ const getDeckSummaryResponse = (
     defaultCardType: deckDocument.defaultCardType,
     isReviewed,
     isOwn,
+    isToReview,
 });
 
 const getDeckResponse = (
     deckDocument: TDeckDocument | LeanDocument<TDeckDocument>,
     cards: IPaginatedResponse<ICardResponse[]>,
     isReviewed: boolean,
-    isOwn: boolean
-): IDeckResponse => {
-    return {
-        id: deckDocument._id,
-        name: deckDocument.name,
-        description: deckDocument.description,
-        tags: deckDocument.tags,
-        cards: {
-            content: cards.content,
-            totalElements: cards.totalElements,
-        },
-        isPrivate: deckDocument.isPrivate,
-        defaultReviewReverseCard: deckDocument.defaultReviewReverseCard,
-        defaultCardType: deckDocument.defaultCardType,
-        isReviewed,
-        isOwn,
-    };
-};
+    isOwn: boolean,
+    isToReview: boolean
+): IDeckResponse => ({
+    id: deckDocument._id,
+    name: deckDocument.name,
+    description: deckDocument.description,
+    tags: deckDocument.tags,
+    cards: {
+        content: cards.content,
+        totalElements: cards.totalElements,
+    },
+    isPrivate: deckDocument.isPrivate,
+    defaultReviewReverseCard: deckDocument.defaultReviewReverseCard,
+    defaultCardType: deckDocument.defaultCardType,
+    isReviewed,
+    isOwn,
+    isToReview,
+});
