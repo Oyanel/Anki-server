@@ -113,7 +113,7 @@ export const getDeckService = async (email: string, id: string, skip) => {
                 skip,
             };
 
-            const cards = await searchCardsService(email, paginatedCardQuery);
+            const cards = await searchCardsService(email, paginatedCardQuery, true);
 
             const cardIdsToReview = cards.content
                 .filter((card) => card.toReview || card.reverseToReview)
@@ -230,11 +230,15 @@ export const searchDecksService = async (
 
     const deckSummaryList = await Promise.all(
         decks.map(async (deckDocument) => {
-            const cards = await searchCardsService(email, {
-                ids: deckDocument.cards.map((card) => card.toString()),
-                toReview: isToReview,
-                deck: deckDocument._id,
-            });
+            const cards = await searchCardsService(
+                email,
+                {
+                    ids: deckDocument.cards.map((card) => card.toString()),
+                    toReview: isToReview,
+                    deck: deckDocument._id,
+                },
+                true
+            );
 
             const cardIdsToReview = cards.content
                 .filter((card) => card.toReview || card.reverseToReview)

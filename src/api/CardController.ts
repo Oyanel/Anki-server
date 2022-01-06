@@ -35,9 +35,13 @@ export class CardController extends Controller {
         @Query() skip?: number,
         @Query() limit?: number,
         @Query() toReview?: boolean,
-        @Query() reverse?: boolean,
+        @Query() deckId?: string,
         @Query() name?: string
     ): Promise<IPaginatedResponse<ICardResponse[]>> {
+        if (deckId && !isValidObjectId(deckId)) {
+            throw new HttpError(EHttpStatus.BAD_REQUEST, "Bad Request");
+        }
+
         try {
             const email = getCurrentUserEmail(request.headers.authorization);
             const paginatedCardQuery: IPaginatedQuery<IQueryCard> = {
@@ -45,6 +49,7 @@ export class CardController extends Controller {
                 limit: limit ?? 10,
                 toReview,
                 name,
+                deck: deckId,
             };
 
             return await searchCardsService(email, paginatedCardQuery);

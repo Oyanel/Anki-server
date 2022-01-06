@@ -4,7 +4,7 @@ import { LeanDocument, Types } from "mongoose";
 import { isCardOwned } from "./deckService";
 import { logError } from "../utils/error/error";
 import { IPaginatedQuery, IPaginatedResponse } from "../api/common/Pagination/IPagination";
-import { getUserDecks } from "./userService";
+import { getUserDecks, isDeckReviewed } from "./userService";
 import { createReviewService, getReviews } from "./reviewService";
 import { isBefore } from "date-fns";
 
@@ -106,11 +106,16 @@ export const deleteCardService = (email: string, cardId: string) =>
 
 export const searchCardsService = async (
     email: string,
-    query: IPaginatedQuery<IQueryCard>
+    query: IPaginatedQuery<IQueryCard>,
+    overrideSecurity?: boolean
 ): Promise<IPaginatedResponse<ICardResponse[]>> => {
     const { privateDecks, reviewedDecks } = await getUserDecks(email);
     const { ids, name, deck, toReview, limit, skip } = query;
     const nameCondition = { $in: new RegExp(name ?? "", "i") };
+
+    if (!overrideSecurity && !(await isDeckReviewed(email, deck))) {
+        throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
+    }
 
     const conditions = {
         _id: ids?.length ? { $in: ids } : undefined,
