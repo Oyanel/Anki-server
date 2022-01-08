@@ -113,7 +113,7 @@ export const searchCardsService = async (
     const { ids, name, deck, toReview, limit, skip } = query;
     const nameCondition = { $in: new RegExp(name ?? "", "i") };
 
-    if (!overrideSecurity && !(await isDeckReviewed(email, deck))) {
+    if (!overrideSecurity && deck && !(await isDeckReviewed(email, deck))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
 
