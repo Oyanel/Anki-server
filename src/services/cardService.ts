@@ -98,7 +98,7 @@ export const deleteCardService = (email: string, cardId: string) =>
             throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
         }
 
-        card.deleteOne();
+        card.remove();
     });
 
 export const searchCardsService = async (
