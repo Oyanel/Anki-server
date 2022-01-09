@@ -11,6 +11,7 @@ export interface ICard {
     back: string[];
     example: string;
     type: ECardType;
+    isReverse: boolean;
 }
 
 /**
@@ -53,5 +54,18 @@ export interface ICreateCard {
     back: string[];
     type: ECardType;
     reverseCard?: boolean;
+    example?: string;
+}
+
+/**
+ * @example {
+ *     "front": ["こんいしは"],
+ *     "back": ["Bonjour"],
+ *     "example": "こんにちはみなさん、げんきですか。",
+ * }
+ */
+export interface IEditCard {
+    front: string[];
+    back: string[];
     example?: string;
 }

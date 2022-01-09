@@ -1,4 +1,4 @@
-import Card, { ICardResponse, ICreateCard, IQueryCard, TCardDocument } from "../models/Card";
+import Card, { ICardResponse, ICreateCard, IEditCard, IQueryCard, TCardDocument } from "../models/Card";
 import { EHttpStatus, HttpError } from "../utils";
 import { LeanDocument, Types } from "mongoose";
 import { isCardOwned } from "./deckService";
@@ -19,6 +19,7 @@ export const createCardService = async (email: string, deckId: string, card: ICr
             front,
             example,
             type,
+            isReverse: reverseCard,
         });
         const promises = [];
         const newCard = await cardDocument.save();
@@ -63,13 +64,9 @@ export const getCardService = async (email: string, id: string, overrideSecurity
     });
 };
 
-export const updateCardService = async (
-    email: string,
-    id: string,
-    front: string[],
-    back: string[],
-    example: string
-) => {
+export const updateCardService = async (email: string, id: string, card: IEditCard) => {
+    const { front, back, example } = card;
+
     if (!(await isCardOwned(email, id))) {
         throw new HttpError(EHttpStatus.ACCESS_DENIED, "Forbidden");
     }
@@ -191,4 +188,5 @@ const getCardResponse = (
     type: cardDocument.type,
     toReview,
     reverseToReview,
+    isReverse: cardDocument.isReverse,
 });

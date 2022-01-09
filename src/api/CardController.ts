@@ -17,7 +17,7 @@ import {
     Post,
     Body,
 } from "tsoa";
-import { ICardResponse, IQueryCard } from "../models/Card";
+import { ICardResponse, IEditCard, IQueryCard } from "../models/Card";
 import { IPaginatedQuery, IPaginatedResponse } from "./common/Pagination/IPagination";
 import express from "express";
 import { IReviewAction, TReviewResponse } from "../models/Review";
@@ -82,20 +82,14 @@ export class CardController extends Controller {
     @Response<HttpError>(EHttpStatus.NOT_FOUND)
     @Response<HttpError>(EHttpStatus.ACCESS_DENIED)
     @SuccessResponse(EHttpStatus.NO_CONTENT)
-    async updateCard(
-        cardId: string,
-        @Request() request: express.Request,
-        @Query() front: string[],
-        @Query() back: string[],
-        @Query() example: string
-    ): Promise<void> {
+    async updateCard(cardId: string, @Request() request: express.Request, @Body() card: IEditCard): Promise<void> {
         if (!isValidObjectId(cardId)) {
             throw new HttpError(EHttpStatus.BAD_REQUEST, "Card id invalid");
         }
 
         try {
             const email = getCurrentUserEmail(request.headers.authorization);
-            await updateCardService(email, cardId, front, back, example);
+            await updateCardService(email, cardId, card);
             this.setStatus(EHttpStatus.NO_CONTENT);
 
             return;

@@ -25,6 +25,9 @@ const CardSchema = new Schema<TCardDocument>({
         type: String,
         validate: { validator: validateType, msg: "Type is not correct" },
     },
+    isReverse: {
+        type: Boolean,
+    },
 });
 
 CardSchema.pre("remove", async function (next) {
